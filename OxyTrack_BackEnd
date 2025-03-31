@@ -1,0 +1,25 @@
+## OxyTrack BackEnd
+
+# Installations
+
+    · npm init -y
+        Creación de un nuevo proyecto Node.js
+    · npm install express cors dotenv morgan
+        Instalación de dependencias básicas
+    · npm install mongoose
+        Instalacion de mongoose para la BBDD en MongoDB
+    · npx tsc --init
+        Inicializacion del TypeScript  
+    · npm install @types/express @types/cors @types/morgan @types/node --save-dev
+        Instalación de dependencias de desarollo para RtpeScript
+
+# Run
+    · npx tsc
+        compila el código TypeScript a JavaScript
+    · node dist/index.js
+        ejecuta el archivo JavaScript generado para iniciar el servidor
+
+
+- Comandos que usaba antes y ahora no -
+node server.js
+
