@@ -1,0 +1,3 @@
+# Ignorar múltiples carpetas
+node_modules/
+dist/

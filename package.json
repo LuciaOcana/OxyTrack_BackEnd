@@ -17,16 +17,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@abandonware/noble": "^1.9.2-26",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "noble": "^0.0.2",
+    "node-ble": "^0.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
-    "@types/node": "^22.13.4"
+    "@types/noble": "^0.0.44",
+    "@types/node": "^22.15.30"
   }
 }

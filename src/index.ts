@@ -1,8 +1,11 @@
+// src/index.ts
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import connectDB from './config/db'; // Asegúrate de que la conexión esté configurada correctamente
-import userRoutes from './routes/userRoutes'; // Importa las rutas de usuario
+import connectDB from './config/db';
+import userRoutes from './routes/userRoutes';
+import irRoutes from './routes/irRoutes';
+import { startBLEListener } from './bluetooth/bleListener';  // ← Importa el BLE listener
 
 const app = express();
 
@@ -10,22 +13,22 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(express.json());  // Soporta JSON en las peticiones
-app.use(cors());          // Habilita CORS para el frontend
-app.use(morgan('dev'));   // Log de peticiones en consola
+app.use(express.json());
+app.use(cors());
+app.use(morgan('dev'));
 
-
-// Ruta de prueba
+// Rutas
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: '# API funcionando correctamente' });
 });
+app.use('/api/users', userRoutes);
+app.use('/api', irRoutes);
 
-// Usar las rutas
-app.use('/api/users', userRoutes); // La ruta para los usuarios será /api/users
+// Iniciar BLE al arrancar el backend
+startBLEListener(); // ← Lanza la escucha BLE
 
 // Puerto de escucha
 const PORT: number = 5000;
-
 app.listen(PORT, () => {
     console.log(`# Servidor corriendo en http://localhost:${PORT}`);
 });
