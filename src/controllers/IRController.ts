@@ -36,7 +36,7 @@ function processSample(ir: number, red: number): void {
   irBuffer.push(ir);
   redBuffer.push(red);
 
-  console.log(`📥 IR: ${ir}, RED: ${red}`);
+  console.log(`IR: ${ir}, RED: ${red}`);
 }
 
 // ⏱️ Cálculo periódico cada minuto
