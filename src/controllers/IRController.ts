@@ -1,69 +1,83 @@
 import { Request, Response } from 'express';
 
-const IR_BUFFER_SIZE = 10;
+// Configuraciones
+const BUFFER_MAX_SIZE = 300; // Número máximo de muestras a almacenar (~5 minutos si llega 1 por segundo)
+const CALCULATION_INTERVAL_MS = 60000; // Calcular SpO₂ cada 60 segundos
+const ANALYSIS_WINDOW_SIZE = 100; // Cuántas muestras usar para el cálculo (últimas 100)
+
+// Buffers circulares
 const irBuffer: number[] = [];
+const redBuffer: number[] = [];
 
-// Algoritmo muy básico para estimar HR a partir de picos en IR
-function estimateHeartRate(irSamples: number[]): number {
-  const peaks: number[] = [];
-
-  for (let i = 1; i < irSamples.length - 1; i++) {
-    if (irSamples[i] > irSamples[i - 1] && irSamples[i] > irSamples[i + 1]) {
-      peaks.push(i);
-    }
-  }
-
-  if (peaks.length < 2) return 0;
-
-  // Tiempo promedio entre picos en muestras
-  const intervals = [];
-  for (let i = 1; i < peaks.length; i++) {
-    intervals.push(peaks[i] - peaks[i - 1]);
-  }
-  const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-
-  // Suponiendo 100 muestras por segundo
-  const sampleRateHz = 100;
-  const heartRate = (60 * sampleRateHz) / avgInterval;
-
-  return Math.round(heartRate);
+// Utilidad para calcular la media
+function mean(arr: number[]): number {
+  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
 }
 
-function processIRSample(ir: number): void {
-  if (irBuffer.length >= IR_BUFFER_SIZE) irBuffer.shift();
+// Cálculo de SpO2 (relación AC/DC)
+function estimateSpO2(ir: number[], red: number[]): number {
+  const irAC = Math.max(...ir) - Math.min(...ir);
+  const redAC = Math.max(...red) - Math.min(...red);
+
+  const irDC = mean(ir);
+  const redDC = mean(red);
+
+  const ratio = (redAC / redDC) / (irAC / irDC);
+  const spo2 = 110 - 25 * ratio;
+
+  return Math.min(100, Math.max(0, Math.round(spo2)));
+}
+
+// Procesar cada muestra entrante
+function processSample(ir: number, red: number): void {
+  if (irBuffer.length >= BUFFER_MAX_SIZE) irBuffer.shift();
+  if (redBuffer.length >= BUFFER_MAX_SIZE) redBuffer.shift();
+
   irBuffer.push(ir);
+  redBuffer.push(red);
 
-  console.log(`💡 Nuevo valor IR: ${ir}`);
-
-  if (irBuffer.length === IR_BUFFER_SIZE) {
-    const heartRate = estimateHeartRate(irBuffer);
-    console.log(`📈 Estimación de frecuencia cardíaca: ${heartRate} BPM`);
-  }
+  console.log(`📥 IR: ${ir}, RED: ${red}`);
 }
 
-// Endpoint opcional si usas Express para enviar datos por URL (e.g. `/ir?ir=12345`)
-export async function receiveIRData(req: Request, res: Response): Promise<void> {
-  const irStr = req.query.ir as string;
+// ⏱️ Cálculo periódico cada minuto
+setInterval(() => {
+  if (irBuffer.length >= ANALYSIS_WINDOW_SIZE && redBuffer.length >= ANALYSIS_WINDOW_SIZE) {
+    const recentIR = irBuffer.slice(-ANALYSIS_WINDOW_SIZE);
+    const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
 
-  if (!irStr) {
-    res.status(400).json({ error: 'Falta el valor IR en la consulta' });
+    const spo2 = estimateSpO2(recentIR, recentRED);
+    console.log(`🩸 SpO₂ estimado (cada minuto): ${spo2}%`);
+  } else {
+    console.log('⏳ Aún no hay suficientes datos para calcular SpO₂...');
+  }
+}, CALCULATION_INTERVAL_MS);
+
+// Endpoint HTTP para recibir muestras
+export async function receiveIRRedData(req: Request, res: Response): Promise<void> {
+  const raw = req.query.data as string;
+
+  if (!raw || !raw.includes(',')) {
+    res.status(400).json({ error: 'Falta el parámetro "data" con valores IR y RED separados por coma' });
     return;
   }
 
+  const [irStr, redStr] = raw.split(',');
   const ir = parseInt(irStr, 10);
+  const red = parseInt(redStr, 10);
 
-  if (isNaN(ir)) {
-    res.status(400).json({ error: 'Valor IR inválido' });
+  if (isNaN(ir) || isNaN(red)) {
+    res.status(400).json({ error: 'Valores IR o RED inválidos' });
     return;
   }
 
-  processIRSample(ir);
+  processSample(ir, red);
 
   res.status(200).json({
-    message: 'Valor IR recibido correctamente',
+    message: 'Valores IR y RED recibidos correctamente',
     ir,
+    red,
   });
 }
 
-// También exportamos la función para que pueda ser usada desde bleListener
-export { processIRSample };
+// Exportar por si se usa en otros archivos
+export { processSample };
