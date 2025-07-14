@@ -4,6 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
+import userDoctorRoutes from './routes/userDoctorRoutes';
 import irRoutes from './routes/irRoutes';
 import { startBLEListener } from './bluetooth/bleListener';  // ← Importa el BLE listener
 
@@ -21,8 +22,10 @@ app.use(morgan('dev'));
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: '# API funcionando correctamente' });
 });
+
 app.use('/api/users', userRoutes);
-app.use('/api', irRoutes);
+app.use('/api/doctors', userDoctorRoutes);
+app.use('/api/oxi', irRoutes);
 
 // Iniciar BLE al arrancar el backend
 startBLEListener(); // ← Lanza la escucha BLE

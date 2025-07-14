@@ -9,12 +9,18 @@ const ANALYSIS_WINDOW_SIZE = 100; // Cuántas muestras usar para el cálculo (ú
 const irBuffer: number[] = [];
 const redBuffer: number[] = [];
 
-// Utilidad para calcular la media
+let latestSpO2: number | null = null;
+
+//---------------------------------------------------------------------------------
+// Utilidad para calcular la media de las medidas
+
 function mean(arr: number[]): number {
   return arr.reduce((sum, val) => sum + val, 0) / arr.length;
 }
 
+//---------------------------------------------------------------------------------
 // Cálculo de SpO2 (relación AC/DC)
+
 function estimateSpO2(ir: number[], red: number[]): number {
   const irAC = Math.max(...ir) - Math.min(...ir);
   const redAC = Math.max(...red) - Math.min(...red);
@@ -28,8 +34,11 @@ function estimateSpO2(ir: number[], red: number[]): number {
   return Math.min(100, Math.max(0, Math.round(spo2)));
 }
 
+//---------------------------------------------------------------------------------
 // Procesar cada muestra entrante
-function processSample(ir: number, red: number): void {
+// Calcula y devuelve el SpO₂ si hay suficientes datos
+
+function processSample(ir: number, red: number): number | null {
   if (irBuffer.length >= BUFFER_MAX_SIZE) irBuffer.shift();
   if (redBuffer.length >= BUFFER_MAX_SIZE) redBuffer.shift();
 
@@ -37,6 +46,16 @@ function processSample(ir: number, red: number): void {
   redBuffer.push(red);
 
   console.log(`IR: ${ir}, RED: ${red}`);
+
+  // Calcular en tiempo real si hay suficientes muestras
+  if (irBuffer.length >= ANALYSIS_WINDOW_SIZE) {
+    const recentIR = irBuffer.slice(-ANALYSIS_WINDOW_SIZE);
+    const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
+    const spo2 = estimateSpO2(recentIR, recentRED);
+    return spo2;
+  }
+
+  return null;
 }
 
 // ⏱️ Cálculo periódico cada minuto
@@ -52,7 +71,9 @@ setInterval(() => {
   }
 }, CALCULATION_INTERVAL_MS);
 
+//---------------------------------------------------------------------------------
 // Endpoint HTTP para recibir muestras
+
 export async function receiveIRRedData(req: Request, res: Response): Promise<void> {
   const raw = req.query.data as string;
 
@@ -70,14 +91,28 @@ export async function receiveIRRedData(req: Request, res: Response): Promise<voi
     return;
   }
 
-  processSample(ir, red);
+  const spo2 = processSample(ir, red);
 
   res.status(200).json({
     message: 'Valores IR y RED recibidos correctamente',
     ir,
     red,
+    ...(spo2 !== null && { spo2 }),
   });
 }
 
+
+export function getLatestSpO2(req: Request, res: Response) {
+  if (latestSpO2 === null) {
+    res.status(404).json({ message: 'No hay datos suficientes para calcular SpO₂ todavía' });
+    return;
+  }
+
+  res.status(200).json({
+    spo2: latestSpO2,
+  });
+}
+//---------------------------------------------------------------------------------
 // Exportar por si se usa en otros archivos
-export { processSample };
+
+export { processSample, latestSpO2};
