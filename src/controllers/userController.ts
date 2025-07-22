@@ -17,12 +17,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
                 age--;
             }
-
             return age;
         };
 
         const age = calculateAge(birthDate); // Calculamos la edad
-        //console.log("La edad es "+ age);
 
         const userData = { ...otherData, birthDate, age }; // Asegurar que age está en el objeto
 
@@ -41,32 +39,15 @@ export async function logIn(req: Request, res: Response): Promise<void> {       
         const loggedUser = await userServices.findUserByUsername(username);
         console.log(loggedUser);
       
-
-       /* if (!loggedUser) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Compare the provided password with the hashed password
-        const passwordMatch = await bcrypt.compare(password, loggedUser.password);
-        if (!passwordMatch) {
-            return res.status(400).json({ error: 'Incorrect password' });
-        }
-
-        if (!loggedUser.admin) {
-            return res.status(400).json({ error: 'You are not an Admin' });
-        }
-        if (loggedUser.disabled==true){
-            return res.status(300).json({ error: 'Usuario no habilitado' });
-        }
-
-        const token: string = jwt.sign(
-            { id: loggedUser.id, username: loggedUser.username, email: loggedUser.email, admin: loggedUser.admin },
-            process.env.SECRET || 'token'
-        );*/
-        
-
-        res.json({ message: 'user logged in', /*token*/ });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to get user' });
+      if (!loggedUser) {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+      return;
     }
+
+    // Si todo está bien, simplemente responde con éxito
+    res.status(200).json({ message: 'Inicio de sesión exitoso' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 }

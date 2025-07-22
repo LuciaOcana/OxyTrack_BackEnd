@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
 import userDoctorRoutes from './routes/userDoctorRoutes';
+import userAdminRoutes from './routes/userAdminRoutes';
 import irRoutes from './routes/irRoutes';
 import { startBLEListener } from './bluetooth/bleListener';  // ← Importa el BLE listener
 
@@ -25,6 +26,7 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/doctors', userDoctorRoutes);
+app.use('/api/admin', userAdminRoutes);
 app.use('/api/oxi', irRoutes);
 
 // Iniciar BLE al arrancar el backend

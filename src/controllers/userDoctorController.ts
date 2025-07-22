@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
 
-export async function registerDoctor(req: Request, res: Response): Promise<void> {
+/*export async function registerDoctor(req: Request, res: Response): Promise<void> {
     try {
         const { username, email, name, lastname, password } = req.body;
 
@@ -25,7 +25,7 @@ export async function registerDoctor(req: Request, res: Response): Promise<void>
         console.error("Error al registrar doctor:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     }
-}
+}*/
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
     try {
