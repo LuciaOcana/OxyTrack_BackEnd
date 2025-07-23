@@ -2,7 +2,7 @@ import { userDoctorDB } from "../models/userDoctor";
 
 export const userDoctorServices = {
     // Crear un nuevo doctor
-    /*create: async (entry: {
+    create: async (entry: {
         username: string;
         email: string;
         name: string;
@@ -26,7 +26,7 @@ export const userDoctorServices = {
             console.error("Error al crear doctor:", error);
             throw new Error("Error al crear doctor");
         }
-    },*/
+    },
 
     // Buscar doctor por nombre de usuario
     findByUsername: async (username: string) => {
