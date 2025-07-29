@@ -18,19 +18,26 @@
   "license": "ISC",
   "dependencies": {
     "@abandonware/noble": "^1.9.2-26",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "google-auth-library": "^10.2.0",
+    "googleapis": "^154.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.1",
     "morgan": "^1.10.0",
     "noble": "^0.0.2",
-    "node-ble": "^0.0.0"
+    "node-ble": "^0.0.0",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.9",
     "@types/noble": "^0.0.44",
-    "@types/node": "^22.15.30"
+    "@types/node": "^22.15.30",
+    "@types/ws": "^8.18.1"
   }
 }

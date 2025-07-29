@@ -1,24 +1,93 @@
-import { userDB } from "../models/user";
+// src/services/irServices.ts
+import fs from 'fs';
+import path from 'path';
+import { google } from 'googleapis';
+import { JWT } from 'google-auth-library';
 
-export const irServices = {
-    // Crear un nuevo usuario
-    create: async (entry: { username: string; email: string; name: string; lastname: string; birthDate: string; age: string; height: string; weight: string; medication: Array<string>; password: string }) => {
-        try {
-            console.log("Datos recibidos para crear usuario:", entry);
+const auth = new JWT({
+  email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+  key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  scopes: ['https://www.googleapis.com/auth/drive'],
+});
 
-            // Validar que se proporcionen los datos esenciales
-            const requiredFields = ['username', 'email', 'name', 'lastname', 'birthDate', 'height', 'weight', 'password'];
+const drive = google.drive({ version: 'v3', auth });
 
-            // Crear usuario en la base de datos
-            const newUser = await userDB.create(entry);
-            return newUser;
-        } catch (error) {
-            console.error("Error al crear usuario:", error);
-            throw new Error("Error al crear usuario");
-        }
-    },
-    findUserByUsername: async(username:string) =>{
-        return await userDB.findOne({username: username})
-    },
-    
-};
+export async function saveSpO2ForUser(username: string, spo2: number) {
+  try {
+    const fileName = `spo2_${username}.txt`;
+    const localDir = path.join(__dirname, '../../data');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    const localPath = path.join(localDir, fileName);
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16); // Fecha legible
+    const newEntry = `${spo2}% (${timestamp})`;
+
+    // 1. Buscar si ya existe en Drive
+    const list = await drive.files.list({
+      q: `name='${fileName}' and mimeType='text/plain' and trashed=false`,
+      fields: 'files(id, name)',
+      spaces: 'drive',
+    });
+
+    let fileId: string | null = null;
+
+    if (list.data.files && list.data.files.length > 0) {
+      fileId = list.data.files[0]?.id ?? null;
+
+      // 2. Descargar el archivo temporalmente
+      if (fileId) {
+        const dest = fs.createWriteStream(localPath);
+        await drive.files.get(
+          { fileId, alt: 'media' },
+          { responseType: 'stream' }
+        ).then(res => {
+          return new Promise((resolve, reject) => {
+            res.data
+              .on('end', () => resolve(true))
+              .on('error', reject)
+              .pipe(dest);
+          });
+        });
+      }
+    } else {
+      // Si no existe, creamos un archivo nuevo localmente
+      fs.writeFileSync(localPath, '');
+    }
+
+    // 3. Leer contenido existente
+    let content = '';
+    if (fs.existsSync(localPath)) {
+      content = fs.readFileSync(localPath, 'utf8').trim();
+    }
+
+    const updatedContent = content ? `${content}\t${newEntry}` : newEntry;
+    fs.writeFileSync(localPath, updatedContent);
+
+    // 4. Subir (crear o actualizar)
+    if (fileId) {
+      await drive.files.update({
+        fileId,
+        media: {
+          mimeType: 'text/plain',
+          body: fs.createReadStream(localPath),
+        },
+      });
+      console.log(`☁️ Archivo actualizado en Drive: ${fileName}`);
+    } else {
+      const res = await drive.files.create({
+        requestBody: {
+          name: fileName,
+          mimeType: 'text/plain',
+        },
+        media: {
+          mimeType: 'text/plain',
+          body: fs.createReadStream(localPath),
+        },
+      });
+      console.log(`☁️ Archivo creado en Drive con ID: ${res.data.id}`);
+    }
+  } catch (error) {
+    console.error('❌ Error al guardar o subir SpO₂:', error);
+  }
+}

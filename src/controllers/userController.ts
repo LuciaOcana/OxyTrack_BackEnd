@@ -1,51 +1,66 @@
 import { Request, Response } from "express";
-import { login, userInterface } from "../models/user"
 import { userServices } from "../services/userServices";
+import { generateToken, comparePassword } from "../utils/auth";
+import {startMeasurementInternal} from '../controllers/IRController';
+
 
 export async function createUser(req: Request, res: Response): Promise<void> {
-    try {
-        const { birthDate, ...otherData } = req.body; // Extraemos birthDate y el resto de datos
+  try {
+    const { birthDate, password, ...otherData } = req.body;
 
-        // Función para calcular la edad a partir de la fecha de nacimiento
-        const calculateAge = (birthDate: string): number => {
-            const birth = new Date(birthDate);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const monthDiff = today.getMonth() - birth.getMonth();
-            
-            // Si aún no ha pasado el cumpleaños de este año, restamos 1
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            return age;
-        };
+    // Calcular edad (tu función)
+    const calculateAge = (birthDate: string): number => {
+      const birth = new Date(birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
 
-        const age = calculateAge(birthDate); // Calculamos la edad
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return age;
+    };
 
-        const userData = { ...otherData, birthDate, age }; // Asegurar que age está en el objeto
+    const age = calculateAge(birthDate).toString();
 
-        // Crear usuario con la edad calculada
-        const user = await userServices.create(userData);
-        res.status(201).json(user); // Devuelve el usuario creado
-    } catch (error) {
-        console.error("Error al crear usuario:", error);
-        res.status(500).json({ message: "Error interno del servidor" });
-    }
+    const userData = { ...otherData, birthDate, age, password }; // password sin hashear aquí
+
+
+    const user = await userServices.create(userData);
+    res.status(201).json(user);
+  } catch (error) {
+    console.error("Error al crear usuario:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
 }
 
-export async function logIn(req: Request, res: Response): Promise<void> {       //No entiendo porque si pongo Promise <Response> me da error
-    try {
-        const { username, password } = req.body;
-        const loggedUser = await userServices.findUserByUsername(username);
-        console.log(loggedUser);
-      
-      if (!loggedUser) {
+
+export async function logIn(req: Request, res: Response): Promise<void> {
+  try {
+    const { username, password } = req.body;
+    const loggedUser = await userServices.findUserByUsername(username);
+
+    if (!loggedUser) {
       res.status(404).json({ error: 'Usuario no encontrado' });
       return;
     }
 
-    // Si todo está bien, simplemente responde con éxito
-    res.status(200).json({ message: 'Inicio de sesión exitoso' });
+    // Comprobar password
+    const isPasswordValid = await comparePassword(password, loggedUser.password);
+    if (!isPasswordValid) {
+      res.status(401).json({ error: 'Contraseña incorrecta' });
+      return;
+    }
+
+    // Generar token con username
+    const token = generateToken({ username: loggedUser.username });
+
+    res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      username: loggedUser.username,
+    });
+    startMeasurementInternal(username);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

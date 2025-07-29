@@ -1,15 +1,22 @@
 import { Request, Response } from 'express';
+import { saveSpO2ForUser } from '../services/irServices'; // 👈 nuevo import
+import { clients } from '../index'; // 👈 importa los clientes WebSocket
+
+
 
 // Configuraciones
-const BUFFER_MAX_SIZE = 300; // Número máximo de muestras a almacenar (~5 minutos si llega 1 por segundo)
-const CALCULATION_INTERVAL_MS = 60000; // Calcular SpO₂ cada 60 segundos
-const ANALYSIS_WINDOW_SIZE = 100; // Cuántas muestras usar para el cálculo (últimas 100)
+const BUFFER_MAX_SIZE = 5; // Número máximo de muestras a almacenar (~5 minutos si llega 1 por segundo)
+const CALCULATION_INTERVAL_MS = 5 * 60 * 1000; // Calcular SpO₂ cada 60 segundos
+const ANALYSIS_WINDOW_SIZE = 5; // Cuántas muestras usar para el cálculo (últimas 100)
 
 // Buffers circulares
 const irBuffer: number[] = [];
 const redBuffer: number[] = [];
 
 let latestSpO2: number | null = null;
+
+// Variable global para almacenar el usuario activo (viene del token)
+export let activeUsername: string | null = null;
 
 //---------------------------------------------------------------------------------
 // Utilidad para calcular la media de las medidas
@@ -47,16 +54,31 @@ function processSample(ir: number, red: number): number | null {
 
   console.log(`IR: ${ir}, RED: ${red}`);
 
-  // Calcular en tiempo real si hay suficientes muestras
   if (irBuffer.length >= ANALYSIS_WINDOW_SIZE) {
     const recentIR = irBuffer.slice(-ANALYSIS_WINDOW_SIZE);
     const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
     const spo2 = estimateSpO2(recentIR, recentRED);
+    latestSpO2 = spo2;
+
+    if (activeUsername) {
+      const data = {
+        username: activeUsername,
+        spo2,
+        timestamp: new Date().toISOString(),
+      };
+      clients.forEach(ws => {
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(data));
+        }
+      });
+    }
+
     return spo2;
   }
 
   return null;
 }
+
 
 // ⏱️ Cálculo periódico cada minuto
 setInterval(() => {
@@ -65,16 +87,43 @@ setInterval(() => {
     const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
 
     const spo2 = estimateSpO2(recentIR, recentRED);
+    latestSpO2 = spo2;
     console.log(`🩸 SpO₂ estimado (cada minuto): ${spo2}%`);
+
+    if (activeUsername) {
+      // Guardar en archivo y subir
+      saveSpO2ForUser(activeUsername, spo2);
+
+      // 🔁 Enviar por WebSocket
+      const data = {
+        username: activeUsername,
+        spo2,
+        timestamp: new Date().toISOString(),
+      };
+
+      clients.forEach(ws => {
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(data));
+        }
+      });
+    }
+
   } else {
     console.log('⏳ Aún no hay suficientes datos para calcular SpO₂...');
   }
 }, CALCULATION_INTERVAL_MS);
 
 //---------------------------------------------------------------------------------
-// Endpoint HTTP para recibir muestras
+// Endpoint para activar la medición para un usuario (debe llamarse desde frontend autenticado)
+export function startMeasurementInternal(username: string) {
+  activeUsername = username;
+  console.log(`✅ Medición activada automáticamente al iniciar sesión para: ${username}`);
+}
 
-export async function receiveIRRedData(req: Request, res: Response): Promise<void> {
+//---------------------------------------------------------------------------------
+// Endpoint HTTP para recibir muestras (suponiendo que BLE Listener o frontend envía aquí datos)
+
+/*export async function receiveIRRedData(req: Request, res: Response): Promise<void> {
   const raw = req.query.data as string;
 
   if (!raw || !raw.includes(',')) {
@@ -99,8 +148,7 @@ export async function receiveIRRedData(req: Request, res: Response): Promise<voi
     red,
     ...(spo2 !== null && { spo2 }),
   });
-}
-
+}*/
 
 export function getLatestSpO2(req: Request, res: Response) {
   if (latestSpO2 === null) {
@@ -112,7 +160,16 @@ export function getLatestSpO2(req: Request, res: Response) {
     spo2: latestSpO2,
   });
 }
+
+export function setActiveUsername(username: string) {
+  activeUsername = username;
+}
+
+export function getActiveUsername() {
+  return activeUsername;
+}
+
 //---------------------------------------------------------------------------------
 // Exportar por si se usa en otros archivos
 
-export { processSample, latestSpO2};
+export { processSample, latestSpO2 };

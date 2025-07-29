@@ -1,6 +1,9 @@
+//Codigo de conexión BLE al microprocesador y 
+
+
 // src/ble/bleListener.ts
 import noble, { Peripheral, Characteristic } from '@abandonware/noble';
-import { processSample  } from '../controllers/IRController'; // 👈 Importa la función que procesa IR
+import { processSample, getActiveUsername   } from '../controllers/IRController'; // 👈 Importa la función que procesa IR
 
 const SERVICE_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const CHARACTERISTIC_UUID = '9c858901-8a57-4791-81fe-4c455b099bc9';
@@ -12,14 +15,22 @@ function handleData(data: Buffer) {
   const value = data.toString().trim();
 
   // Si recibimos "51234,49876"
+ const handleData = (data: Buffer) => {
+  const value = data.toString().trim();
   const parts = value.split(',');
+
   if (parts.length === 2) {
     const ir = parseInt(parts[0], 10);
     const red = parseInt(parts[1], 10);
 
     if (!isNaN(ir) && !isNaN(red)) {
-      console.log(`📥 IR: ${ir}, RED: ${red}`);
-      processSample(ir, red); // ✅ usa nueva función
+      const currentUser = getActiveUsername();
+      if (currentUser) {
+        console.log(`📥 IR: ${ir}, RED: ${red} (usuario: ${currentUser})`);
+        processSample(ir, red);
+      } else {
+        console.log('⏸️ Ignorado: ningún usuario ha iniciado sesión.');
+      }
     } else {
       console.warn(`⚠️ Datos no numéricos recibidos: "${value}"`);
     }
@@ -31,7 +42,7 @@ function handleData(data: Buffer) {
   } else {
     console.warn(`⚠️ Valor desconocido recibido: "${value}"`);
   }
-}
+};}
 
 export function startBLEListener() {
   noble.on('stateChange', async (state: string) => {

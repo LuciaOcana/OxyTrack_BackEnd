@@ -1,4 +1,6 @@
 import { userDB } from "../models/user";
+import { hashPassword } from '../utils/auth'; // Ajusta la ruta si es diferente
+
 
 export const userServices = {
     // Crear un nuevo usuario
@@ -9,16 +11,24 @@ export const userServices = {
             // Validar que se proporcionen los datos esenciales
             const requiredFields = ['username', 'email', 'name', 'lastname', 'birthDate', 'height', 'weight', 'password'];
 
+            // Hashear la contraseña
+            const hashedPassword = await hashPassword(entry.password);
+
+            // Reemplazar la contraseña original
+            const userData = {
+                ...entry,
+                password: hashedPassword
+            };
             // Crear usuario en la base de datos
-            const newUser = await userDB.create(entry);
+            const newUser = await userDB.create(userData);
             return newUser;
         } catch (error) {
             console.error("Error al crear usuario:", error);
             throw new Error("Error al crear usuario");
         }
     },
-    findUserByUsername: async(username:string) =>{
-        return await userDB.findOne({username: username})
+    findUserByUsername: async (username: string) => {
+        return await userDB.findOne({ username: username })
     },
-    
+
 };

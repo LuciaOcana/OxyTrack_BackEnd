@@ -23,3 +23,16 @@
 - Comandos que usaba antes y ahora no -
 node server.js
 
+
+dependencias google:
+npm install googleapis google-auth-library
+dependencias del token:
+npm install jsonwebtoken bcryptjs
+npm install --save-dev @types/jsonwebtoken
+dependencias de websocket
+npm install ws
+npm install --save-dev @types/ws
+
+
+
+
