@@ -8,41 +8,31 @@ import { processSample, getActiveUsername   } from '../controllers/IRController'
 const SERVICE_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const CHARACTERISTIC_UUID = '9c858901-8a57-4791-81fe-4c455b099bc9';
 
+let loginStatus = 0;
 let connectedPeripheral: Peripheral | null = null;
 let dataCharacteristic: Characteristic | null = null;
 
-function handleData(data: Buffer) {
-  const value = data.toString().trim();
-
-  // Si recibimos "51234,49876"
- const handleData = (data: Buffer) => {
-  const value = data.toString().trim();
-  const parts = value.split(',');
-
-  if (parts.length === 2) {
-    const ir = parseInt(parts[0], 10);
-    const red = parseInt(parts[1], 10);
-
-    if (!isNaN(ir) && !isNaN(red)) {
-      const currentUser = getActiveUsername();
-      if (currentUser) {
-        console.log(`📥 IR: ${ir}, RED: ${red} (usuario: ${currentUser})`);
-        processSample(ir, red);
-      } else {
-        console.log('⏸️ Ignorado: ningún usuario ha iniciado sesión.');
-      }
-    } else {
-      console.warn(`⚠️ Datos no numéricos recibidos: "${value}"`);
-    }
-
-  } else if (value === '1') {
-    console.log('🟢 ESP32: Conectado');
-  } else if (value === '0') {
-    console.log('🔴 ESP32: Desconectado');
+// Función para enviar el estado al ESP32 por BLE
+function sendLoginStatusToESP() {
+  if (dataCharacteristic) {
+    const value = loginStatus.toString(); // "1" o "0"
+    dataCharacteristic.write(Buffer.from(value), false);
+    console.log(`📤 Enviado al ESP32: loginStatus = ${value}`);
   } else {
-    console.warn(`⚠️ Valor desconocido recibido: "${value}"`);
+    console.log('⚠️ No se pudo enviar loginStatus: dataCharacteristic no disponible');
   }
-};}
+}
+
+// Actualizar el estado del LogIn desde cualquie fichero externo
+export function setLoginStatus(status: number) {
+  loginStatus = status === 1 ? 1 : 0;
+  console.log(`🔁 loginStatus actualizado a: ${loginStatus}`);
+  sendLoginStatusToESP(); // Notificar al ESP32 en tiempo real
+}
+
+export function getLoginStatus() {
+  return loginStatus;
+}
 
 export function startBLEListener() {
   noble.on('stateChange', async (state: string) => {
@@ -69,9 +59,11 @@ export function startBLEListener() {
       );
 
       dataCharacteristic = characteristics[0];
-
       await dataCharacteristic.subscribeAsync();
       console.log('📡 Suscripción activada para notificaciones BLE');
+
+// ✅ Notificamos el estado de login actual
+      sendLoginStatusToESP();
 
       const handleData = (data: Buffer) => {
         const value = data.toString().trim();
@@ -121,4 +113,9 @@ export function startBLEListener() {
       console.error('❌ Error al conectar al ESP32:', error);
     }
   });
+}
+
+// Función exportada para forzar envío cuando cambia el estado de login
+export function updateLoginStatusBLE() {
+  sendLoginStatusToESP();
 }

@@ -1,164 +1,89 @@
 import { Request, Response } from 'express';
-import { saveSpO2ForUser } from '../services/irServices'; // 👈 nuevo import
-import { clients } from '../index'; // 👈 importa los clientes WebSocket
-
-
+import { saveSpO2ForUser } from '../services/irServices';
+import { clients } from '../index';
 
 // Configuraciones
-const BUFFER_MAX_SIZE = 5; // Número máximo de muestras a almacenar (~5 minutos si llega 1 por segundo)
-const CALCULATION_INTERVAL_MS = 5 * 60 * 1000; // Calcular SpO₂ cada 60 segundos
-const ANALYSIS_WINDOW_SIZE = 5; // Cuántas muestras usar para el cálculo (últimas 100)
+export const ANALYSIS_WINDOW_SIZE = 5; // 5 muestras (5 minutos)
+export const CALCULATION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
 
-// Buffers circulares
-const irBuffer: number[] = [];
-const redBuffer: number[] = [];
+// Lote de medidas (5 pares IR y RED)
+let measurementBatch: { ir: number; red: number }[] = [];
 
 let latestSpO2: number | null = null;
-
-// Variable global para almacenar el usuario activo (viene del token)
 export let activeUsername: string | null = null;
 
-//---------------------------------------------------------------------------------
-// Utilidad para calcular la media de las medidas
-
+// Utilidad para calcular media
 function mean(arr: number[]): number {
   return arr.reduce((sum, val) => sum + val, 0) / arr.length;
 }
 
-//---------------------------------------------------------------------------------
-// Cálculo de SpO2 (relación AC/DC)
-
+// Cálculo SpO2 según fórmula AC/DC
 function estimateSpO2(ir: number[], red: number[]): number {
   const irAC = Math.max(...ir) - Math.min(...ir);
   const redAC = Math.max(...red) - Math.min(...red);
-
   const irDC = mean(ir);
   const redDC = mean(red);
 
   const ratio = (redAC / redDC) / (irAC / irDC);
   const spo2 = 110 - 25 * ratio;
-
   return Math.min(100, Math.max(0, Math.round(spo2)));
 }
 
-//---------------------------------------------------------------------------------
-// Procesar cada muestra entrante
-// Calcula y devuelve el SpO₂ si hay suficientes datos
+// Recibir cada muestra IR y RED (una por minuto)
+function processSample(ir: number, red: number): void {
+  measurementBatch.push({ ir, red });
+  console.log(`Nueva muestra guardada: IR=${ir}, RED=${red}`);
 
-function processSample(ir: number, red: number): number | null {
-  if (irBuffer.length >= BUFFER_MAX_SIZE) irBuffer.shift();
-  if (redBuffer.length >= BUFFER_MAX_SIZE) redBuffer.shift();
-
-  irBuffer.push(ir);
-  redBuffer.push(red);
-
-  console.log(`IR: ${ir}, RED: ${red}`);
-
-  if (irBuffer.length >= ANALYSIS_WINDOW_SIZE) {
-    const recentIR = irBuffer.slice(-ANALYSIS_WINDOW_SIZE);
-    const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
-    const spo2 = estimateSpO2(recentIR, recentRED);
-    latestSpO2 = spo2;
-
-    if (activeUsername) {
-      const data = {
-        username: activeUsername,
-        spo2,
-        timestamp: new Date().toISOString(),
-      };
-      clients.forEach(ws => {
-        if (ws.readyState === ws.OPEN) {
-          ws.send(JSON.stringify(data));
-        }
-      });
-    }
-
-    return spo2;
-  }
-
-  return null;
+  // No borres aquí: solo borrarás el batch completo después del cálculo periódico
 }
 
-
-// ⏱️ Cálculo periódico cada minuto
+// Cada 5 minutos calcular SpO2 con las 5 últimas muestras
 setInterval(() => {
-  if (irBuffer.length >= ANALYSIS_WINDOW_SIZE && redBuffer.length >= ANALYSIS_WINDOW_SIZE) {
-    const recentIR = irBuffer.slice(-ANALYSIS_WINDOW_SIZE);
-    const recentRED = redBuffer.slice(-ANALYSIS_WINDOW_SIZE);
-
-    const spo2 = estimateSpO2(recentIR, recentRED);
-    latestSpO2 = spo2;
-    console.log(`🩸 SpO₂ estimado (cada minuto): ${spo2}%`);
-
-    if (activeUsername) {
-      // Guardar en archivo y subir
-      saveSpO2ForUser(activeUsername, spo2);
-
-      // 🔁 Enviar por WebSocket
-      const data = {
-        username: activeUsername,
-        spo2,
-        timestamp: new Date().toISOString(),
-      };
-
-      clients.forEach(ws => {
-        if (ws.readyState === ws.OPEN) {
-          ws.send(JSON.stringify(data));
-        }
-      });
-    }
-
-  } else {
-    console.log('⏳ Aún no hay suficientes datos para calcular SpO₂...');
+  if (measurementBatch.length < ANALYSIS_WINDOW_SIZE) {
+    console.log(`⏳ Esperando más muestras... (${measurementBatch.length}/${ANALYSIS_WINDOW_SIZE})`);
+    return;
   }
+
+  const irs = measurementBatch.map(m => m.ir);
+  const reds = measurementBatch.map(m => m.red);
+  const spo2 = estimateSpO2(irs, reds);
+  latestSpO2 = spo2;
+
+  console.log(`🩸 SpO₂ estimado (cada ${CALCULATION_INTERVAL_MS / 60000} minutos): ${spo2}%`);
+
+  if (activeUsername) {
+    saveSpO2ForUser(activeUsername, spo2);
+
+    const data = {
+      username: activeUsername,
+      spo2,
+      timestamp: new Date().toISOString(),
+    };
+
+    clients.forEach(ws => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify(data));
+      }
+    });
+  }
+
+  // Limpiar lote para acumular siguientes 5 medidas
+  measurementBatch = [];
 }, CALCULATION_INTERVAL_MS);
 
-//---------------------------------------------------------------------------------
-// Endpoint para activar la medición para un usuario (debe llamarse desde frontend autenticado)
+// Endpoints y demás funciones:
+
 export function startMeasurementInternal(username: string) {
   activeUsername = username;
-  console.log(`✅ Medición activada automáticamente al iniciar sesión para: ${username}`);
+  console.log(`✅ Medición activada para: ${username}`);
 }
-
-//---------------------------------------------------------------------------------
-// Endpoint HTTP para recibir muestras (suponiendo que BLE Listener o frontend envía aquí datos)
-
-/*export async function receiveIRRedData(req: Request, res: Response): Promise<void> {
-  const raw = req.query.data as string;
-
-  if (!raw || !raw.includes(',')) {
-    res.status(400).json({ error: 'Falta el parámetro "data" con valores IR y RED separados por coma' });
-    return;
-  }
-
-  const [irStr, redStr] = raw.split(',');
-  const ir = parseInt(irStr, 10);
-  const red = parseInt(redStr, 10);
-
-  if (isNaN(ir) || isNaN(red)) {
-    res.status(400).json({ error: 'Valores IR o RED inválidos' });
-    return;
-  }
-
-  const spo2 = processSample(ir, red);
-
-  res.status(200).json({
-    message: 'Valores IR y RED recibidos correctamente',
-    ir,
-    red,
-    ...(spo2 !== null && { spo2 }),
-  });
-}*/
 
 export function getLatestSpO2(req: Request, res: Response) {
   if (latestSpO2 === null) {
     res.status(404).json({ message: 'No hay datos suficientes para calcular SpO₂ todavía' });
     return;
   }
-
-  res.status(200).json({
-    spo2: latestSpO2,
-  });
+  res.status(200).json({ spo2: latestSpO2 });
 }
 
 export function setActiveUsername(username: string) {
@@ -168,8 +93,5 @@ export function setActiveUsername(username: string) {
 export function getActiveUsername() {
   return activeUsername;
 }
-
-//---------------------------------------------------------------------------------
-// Exportar por si se usa en otros archivos
 
 export { processSample, latestSpO2 };

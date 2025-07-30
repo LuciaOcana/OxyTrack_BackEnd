@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { userServices } from "../services/userServices";
 import { generateToken, comparePassword } from "../utils/auth";
-import {startMeasurementInternal} from '../controllers/IRController';
+import { startMeasurementInternal } from '../controllers/IRController';
+import { setLoginStatus } from '../bluetooth/bleListener';
 
 
 export async function createUser(req: Request, res: Response): Promise<void> {
@@ -55,12 +56,15 @@ export async function logIn(req: Request, res: Response): Promise<void> {
     // Generar token con username
     const token = generateToken({ username: loggedUser.username });
 
+    setLoginStatus(1);  //avisa que se ha iniciado sesion y que se puede empezar a medir el valor de IR y RED desde el micro
+    startMeasurementInternal(username);
+
     res.status(200).json({
       message: 'Inicio de sesión exitoso',
       token,
       username: loggedUser.username,
     });
-    startMeasurementInternal(username);
+
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
