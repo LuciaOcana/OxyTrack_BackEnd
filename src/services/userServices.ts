@@ -30,5 +30,18 @@ export const userServices = {
     findUserByUsername: async (username: string) => {
         return await userDB.findOne({ username: username })
     },
+     // Obtener todos los usuarios
+    getAllUsers: async (page: number , limit: number ) => {
+        // Calcular el número de documentos que deben saltarse
+        const skip = (page - 1) * limit;
+    
+        // Realizar la consulta con paginación
+        const users = await userDB.find()
+                                    .skip(skip)
+                                    .limit(limit);
+    
+        // Retornar los usuarios encontrados
+        return users;
+    },
 
 };

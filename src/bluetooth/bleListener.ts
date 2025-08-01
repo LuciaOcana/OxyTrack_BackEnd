@@ -73,12 +73,10 @@ export function startBLEListener() {
           const red = parseInt(parts[1], 10);
 
           if (!isNaN(ir) && !isNaN(red)) {
-            console.log(`📥 IR: ${ir}, RED: ${red}`);
             processSample(ir, red); // 👈 función actualizada en tu controller
           } else {
             console.warn(`⚠️ Datos no numéricos recibidos: "${value}"`);
           }
-
         } else if (value === '1') {
           console.log('🟢 ESP32: Conectado');
         } else if (value === '0') {

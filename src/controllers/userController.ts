@@ -3,6 +3,8 @@ import { userServices } from "../services/userServices";
 import { generateToken, comparePassword } from "../utils/auth";
 import { startMeasurementInternal } from '../controllers/IRController';
 import { setLoginStatus } from '../bluetooth/bleListener';
+import { paginatorInterface } from '../utils/paginator';
+
 
 
 export async function createUser(req: Request, res: Response): Promise<void> {
@@ -69,4 +71,24 @@ export async function logIn(req: Request, res: Response): Promise<void> {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
+}
+export async function getUserList(req: Request, res: Response): Promise<void> {
+   try {
+    console.log("Get users");
+    const page = Number(req.params.page);
+    const limit = Number(req.params.limit);
+    const paginator = {page, limit} as paginatorInterface
+    console.log(paginator);
+    const users = await userServices.getAllUsers(paginator.page, paginator.limit);
+    if (!users) {
+        console.error("Users is undefined or null");
+        res.json([]);
+    }
+    console.log("users", users);
+    res.json({users});
+   } catch (error) {
+
+    console.error(error); //log de errores quitar
+    res.status(500).json({ error:'Failes to get users'});
+   }
 }
