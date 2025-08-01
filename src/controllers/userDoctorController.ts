@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
+import { paginatorInterface } from '../utils/paginator';
+
 
 export async function registerDoctor(req: Request, res: Response): Promise<void> {
     try {
@@ -48,4 +50,25 @@ export async function loginDoctor(req: Request, res: Response): Promise<void> {
         console.error("Error en el login:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     }
+}
+
+export async function getDoctorList(req: Request, res: Response): Promise<void> {
+   try {
+    console.log("Get doctors");
+    const page = Number(req.params.page);
+    const limit = Number(req.params.limit);
+    const paginator = {page, limit} as paginatorInterface
+    console.log(paginator);
+    const doctors = await userDoctorServices.getAllDoctors(paginator.page, paginator.limit);
+    if (!doctors) {
+        console.error("Doctors is undefined or null");
+        res.json([]);
+    }
+    console.log("Doctors", doctors);
+    res.json({doctors});
+   } catch (error) {
+
+    console.error(error); //log de errores quitar
+    res.status(500).json({ error:'Failes to get doctors'});
+   }
 }

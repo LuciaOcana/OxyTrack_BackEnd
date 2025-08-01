@@ -38,4 +38,18 @@ export const userDoctorServices = {
             throw new Error("No se pudo buscar el doctor");
         }
     },
+     // Obtener todos los doctores
+        getAllDoctors: async (page: number , limit: number ) => {
+            // Calcular el número de documentos que deben saltarse
+            const skip = (page - 1) * limit;
+        
+            // Realizar la consulta con paginación
+            const users = await userDoctorDB.find()
+                                        .skip(skip)
+                                        .limit(limit);
+        
+            // Retornar los usuarios encontrados
+            return users;
+        },
+    
 };

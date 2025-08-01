@@ -9,6 +9,6 @@ router.post("/create", createUser);
 //Ruta per fer el login
 router.post("/logIn", logIn);
 // Ruta para obtener todos los usuarios
-router.get("/getUser/:page/:limit", getUserList); //TokenValidation, AdminValidation, getUsers);
+router.get("/getUsers/:page/:limit", getUserList); //TokenValidation, AdminValidation, getUsers);
 
 export default router;
