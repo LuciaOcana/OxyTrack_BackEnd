@@ -12,20 +12,25 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     const { birthDate, password, ...otherData } = req.body;
 
     // Calcular edad (tu función)
-    const calculateAge = (birthDate: string): number => {
-      const birth = new Date(birthDate);
-      const today = new Date();
-      let age = today.getFullYear() - birth.getFullYear();
-      const monthDiff = today.getMonth() - birth.getMonth();
+   const calculateAge = (birthDate: string): number => {
+  // Esperamos formato: dd/mm/yyyy
+  const [day, month, year] = birthDate.split('/').map(Number);
 
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
-      return age;
-    };
+  // Validación básica por si la fecha es incorrecta
+  if (!day || !month || !year) return NaN;
 
+  const birth = new Date(year, month - 1, day); // JS usa meses 0-indexados
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
     const age = calculateAge(birthDate).toString();
-
+    console.log('age',age);
     const userData = { ...otherData, birthDate, age, password }; // password sin hashear aquí
 
 
