@@ -29,6 +29,7 @@
     "morgan": "^1.10.0",
     "noble": "^0.0.2",
     "node-ble": "^0.0.0",
+    "nodemailer": "^7.0.5",
     "ws": "^8.18.3"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@types/morgan": "^1.9.9",
     "@types/noble": "^0.0.44",
     "@types/node": "^22.15.30",
+    "@types/nodemailer": "^6.4.17",
     "@types/ws": "^8.18.1"
   }
 }

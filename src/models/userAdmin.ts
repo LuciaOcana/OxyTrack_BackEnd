@@ -1,13 +1,19 @@
 import { model, Schema } from "mongoose";
 import internal from "stream";
 
-export interface userAdminInterface{
+export interface userAdminInterface {
     username: string,
+    email: string,
     password: string
 }
 
 export const userSchema = new Schema<userAdminInterface>({
     username: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    email: {
         type: String,
         required: true,
         unique: true
@@ -18,6 +24,6 @@ export const userSchema = new Schema<userAdminInterface>({
     }
 })
 
-export type loginAdmin = Pick<userAdminInterface, 'username' | 'password' >
+export type loginAdmin = Pick<userAdminInterface, 'username' | 'password'>
 
 export const userAdminDB = model<userAdminInterface>('userAdmin', userSchema)

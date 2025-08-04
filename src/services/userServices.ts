@@ -1,5 +1,5 @@
 import { userDB } from "../models/user";
-import { hashPassword } from '../utils/auth'; // Ajusta la ruta si es diferente
+import { hashPassword } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
 
 
 export const userServices = {

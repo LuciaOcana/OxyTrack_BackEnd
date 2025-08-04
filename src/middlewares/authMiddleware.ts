@@ -1,21 +1,21 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/auth";
+import { verifyToken } from "../utils/auth/auth";
 
-export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+export function authenticateJWT(req: Request, res: Response, next: NextFunction): void {
+  const token = req.header('Token');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No autorizado, token faltante' });
+  if (!token) {
+    res.status(401).json({ message: 'No autorizado, token faltante' });
+    return;
   }
 
-  const token = authHeader.split(' ')[1];
   const decoded = verifyToken(token);
 
   if (!decoded) {
-    return res.status(401).json({ message: 'Token inválido o expirado' });
+    res.status(401).json({ message: 'Token inválido o expirado' });
+    return;
   }
 
-  // Guardar username en req.user para usar luego
   req.user = decoded;
   next();
 }
