@@ -34,30 +34,53 @@ import { paginatorInterface } from '../utils/paginator';
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
     try {
         const { username, password }: login = req.body;
-
         const loggedUser = await userDoctorServices.findByUsername(username);
 
         if (!loggedUser) {
-            res.status(404).json({ message: "Usuario no encontrado" });
+            res.status(404).json({ message: "Doctor no encontrado" });
             return;
         }
+        const isPasswordValid = await comparePassword(password, loggedUser.password);
 
-        if (loggedUser.password !== password) {
-            res.status(401).json({ message: "Contraseña incorrecta" });
-            return;
-        }
+
+       if (!isPasswordValid) {
+      res.status(401).json({ error: 'Contraseña incorrecta' });
+      return;
+    }
+
 
         // Genera un JWT al iniciar sesión
             const token = generateToken({ id: loggedUser.username});
 
         res.status(200).json({message: 'Inicio de sesión exitoso',
-      token, });
+      token});
     } catch (error) {
         console.error("Error en el login:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     }
 }
 
+
+export async function getUserList(req: Request, res: Response): Promise<void> {
+   try {
+    console.log("Get users");
+    const page = Number(req.params.page);
+    const limit = Number(req.params.limit);
+    const paginator = {page, limit} as paginatorInterface
+    console.log(paginator);
+    const users = await userDoctorServices.getAllUsers(paginator.page, paginator.limit);
+    if (!users) {
+        console.error("Users is undefined or null");
+        res.json([]);
+    }
+    console.log("users", users);
+    res.json({users});
+   } catch (error) {
+
+    console.error(error); //log de errores quitar
+    res.status(500).json({ error:'Failes to get users'});
+   }
+}
 /*export async function getDoctorList(req: Request, res: Response): Promise<void> {
    try {
     console.log("Get doctors");

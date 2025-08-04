@@ -4,16 +4,18 @@ import { authenticateJWT } from '../middlewares/authMiddleware';
 
 const router = express.Router();
 
-// Ruta para crear doctor
-router.post("/createDoctor", authenticateJWT, registerDoctor);
-
 // Ruta para crear admin
 router.post("/createAdmin", createAdmin);
 
 //Ruta per fer el login
 router.post("/logInAdmin", logInAdmin);
 
+// Ruta para crear doctor
+router.post("/createDoctor", authenticateJWT, registerDoctor);
+
 //Ruta para obtener la información de todos los doctores
 router.get("/getDoctors/:page/:limit",authenticateJWT, getDoctorsList); //TokenValidation, AdminValidation, getUsers);
+
+//Falta ruta editDoctor
 
 export default router;

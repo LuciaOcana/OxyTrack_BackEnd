@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, logIn, getUserList } from '../controllers/userController';
+import { createUser, logIn } from '../controllers/userController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 
 const router = express.Router();
@@ -10,7 +10,8 @@ router.post("/create", createUser);
 //Ruta per fer el login
 router.post("/logIn", logIn);
 
-// Ruta para obtener todos los usuarios
-router.get("/getUsers/:page/:limit",authenticateJWT, getUserList); //TokenValidation, AdminValidation, getUsers);
+//Falta ruta editUser
+
+
 
 export default router;
