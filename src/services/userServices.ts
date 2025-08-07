@@ -33,6 +33,20 @@ export const userServices = {
         return await userDB.findOne({ username: username })
     },
 
-    //Falta funcion editUser
+    // Actualizar un usuario por username
+    editUserByUsername: async (username: string, body: object) => {
+        console.log(body);
+        return await userDB.findOneAndReplace({ username }, body, { new: true });
+    },
+    // Buscar un usuario por cualquier filtro (ej: { username }, { email }, etc)
+  findOne: async (filter: object) => {
+    try {
+      const user = await userDB.findOne(filter);
+      return user;
+    } catch (error) {
+      console.error('Error en userServices.findOne:', error);
+      throw error;
+    }
+  },
 
 };

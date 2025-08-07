@@ -7,7 +7,11 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 
-import http from 'http'; // ← Añadido
+import https from 'https'; // ✅ Usamos https en lugar de http
+import fs from 'fs';
+import path from 'path'; // ✅ para rutas seguras entre dist/src
+
+
 import WebSocket, { WebSocketServer } from 'ws';
 
 import connectDB from './config/db';
@@ -39,9 +43,14 @@ app.use('/api/oxi', irRoutes);
 
 // Iniciar BLE al arrancar el backend
 startBLEListener(); // ← Lanza la escucha BLE
+//C:\Users\lucia\Desktop\universidad\TFG\OxyTrack_BackEnd\src\utils\auth
+// ✅ Leer los certificados SSL generados con mkcert (usa path.resolve para que funcione con dist/)
+const privateKey = fs.readFileSync(path.resolve(__dirname, '../src/utils/auth/localhost-key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.resolve(__dirname, '../src/utils/auth/localhost.pem'), 'utf8');
+const credentials = { key: privateKey, cert: certificate };
 // ----------------------------------------------------------------------------------
 // 🔌 WebSocket Server
-const server = http.createServer(app); // Crear servidor HTTP con Express
+const server = https.createServer(credentials, app); // Crear servidor HTTP con Express
 
 const wss = new WebSocketServer({ server }); // Crear WebSocket sobre ese servidor
 
