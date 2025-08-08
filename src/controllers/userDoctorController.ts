@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
 import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
+import { userServices } from "../services/userServices";
+import { userInterface } from "../models/user"
+import { hashPassword } from '../utils/auth/auth';
 
 import { paginatorInterface } from '../utils/paginator';
 
@@ -81,6 +84,52 @@ export async function getUserList(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error:'Failes to get users'});
    }
 }
+
+
+export async function editUserByDoctor(req: Request, res: Response): Promise<void> {
+  try {
+    const usernameParam = req.params.username; //lo coge de la URL, en el frontEnd hay que hacer que se le pase por URL
+
+    const user = await userServices.findOne({ username: usernameParam });
+    if (!user) {
+      res.status(404).json({ error: `User with username ${usernameParam} not found` });
+      return;
+    }
+
+    const {
+    medication,
+    } = req.body as Partial<userInterface>;
+
+
+    const updatedUser: userInterface = {
+      username: user.username,
+      email:user.email,
+      name: user.name,
+      lastname: user.lastname,
+      birthDate: user.birthDate,
+      age: user.age, // se mantiene
+      height: user.height,
+      weight: user.weight,
+      medication: medication ?? user.medication, // se mantiene
+      password: user.password, // será actualizado si se envía uno nuevo
+    };
+
+    const updated = await userServices.editUserByUsername(usernameParam, updatedUser);
+    if (!updated) {
+      res.status(500).json({ error: 'Failed to update user' });
+      return;
+    }
+
+    res.status(200).json({ message: 'User medication is updated successfully' });
+
+  } catch (error) {
+    console.error('Error in editUser:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+
+
 /*export async function getDoctorList(req: Request, res: Response): Promise<void> {
    try {
     console.log("Get doctors");
