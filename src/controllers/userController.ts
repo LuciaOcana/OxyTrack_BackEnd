@@ -139,19 +139,20 @@ export async function editUser(req: Request, res: Response): Promise<void> {
     }
 
     const updatedUser: userInterface = {
-      username: username ?? user.username,
-      email: email ?? user.email,
-      name: name ?? user.name,
-      lastname: lastname ?? user.lastname,
-      birthDate: birthDate ?? user.birthDate,
+       username: username && username.trim() !== '' ? username : user.username,
+      email: email && email.trim() !== '' ? email : user.email,
+      name: name && name.trim() !== '' ? name : user.name,
+      lastname: lastname && lastname.trim() !== '' ? lastname : user.lastname,
+      birthDate: birthDate && birthDate.trim() !== '' ? birthDate : user.birthDate,
       age: user.age, // se mantiene
-      height: height ?? user.height,
-      weight: weight ?? user.weight,
+      height: height && height.trim() !== '' ? height : user.height,
+      weight: weight && weight.trim() !== '' ? weight: user.weight,
       medication: user.medication, // se mantiene
       password: user.password, // será actualizado si se envía uno nuevo
     };
 
-    if (password) {
+   
+    if (password && password.trim() !== '') {
       updatedUser.password = await hashPassword(password);
     }
 

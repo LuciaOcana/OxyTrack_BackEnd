@@ -14,5 +14,6 @@ router.get("/getUsers/:page/:limit",authenticateJWT, getUserList); //TokenValida
 //Falta ruta de editUser
 router.put("/editUserDoctor/:username",authenticateJWT, editUserByDoctor);
 
+//Falta ruta para que el Doctor pueda cambiar su contraseña y no solo pueda cambiarsela el admin
 
 export default router;

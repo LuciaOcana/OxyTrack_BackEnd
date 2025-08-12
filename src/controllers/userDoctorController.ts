@@ -4,35 +4,10 @@ import { userDoctorServices } from "../services/userDoctorServices"
 import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
 import { userServices } from "../services/userServices";
 import { userInterface } from "../models/user"
-import { hashPassword } from '../utils/auth/auth';
 
 import { paginatorInterface } from '../utils/paginator';
+import { hashPassword } from '../utils/auth/auth';
 
-
-/*export async function registerDoctor(req: Request, res: Response): Promise<void> {
-    try {
-        const { username, email, name, lastname, password } = req.body;
-
-        if (!username || !email || !password || !name || !lastname) {
-            res.status(400).json({ message: "Faltan campos obligatorios" });
-            return;
-        }
-
-        const newDoctor: userDoctorInterface = {
-            username,
-            email,
-            name,
-            lastname,
-            password
-        };
-
-        const createdDoctor = await userDoctorServices.create(newDoctor);
-        res.status(201).json(createdDoctor);
-    } catch (error) {
-        console.error("Error al registrar doctor:", error);
-        res.status(500).json({ message: "Error interno del servidor" });
-    }
-}*/
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
     try {
@@ -100,19 +75,13 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
     medication,
     } = req.body as Partial<userInterface>;
 
+    // Partimos de los datos actuales
+    const updatedUser: userInterface = { ...user };
 
-    const updatedUser: userInterface = {
-      username: user.username,
-      email:user.email,
-      name: user.name,
-      lastname: user.lastname,
-      birthDate: user.birthDate,
-      age: user.age, // se mantiene
-      height: user.height,
-      weight: user.weight,
-      medication: medication ?? user.medication, // se mantiene
-      password: user.password, // será actualizado si se envía uno nuevo
-    };
+    // Solo actualizamos medication si llega con datos
+    if (Array.isArray(medication) && medication.length > 0) {
+      updatedUser.medication = medication;
+    }
 
     const updated = await userServices.editUserByUsername(usernameParam, updatedUser);
     if (!updated) {
@@ -129,24 +98,44 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
 }
 
 
+export async function updatePasswordDoctor(req: Request, res: Response): Promise<void> {
+  try {
+    const usernameParam = req.params.username;
 
-/*export async function getDoctorList(req: Request, res: Response): Promise<void> {
-   try {
-    console.log("Get doctors");
-    const page = Number(req.params.page);
-    const limit = Number(req.params.limit);
-    const paginator = {page, limit} as paginatorInterface
-    console.log(paginator);
-    const doctors = await userDoctorServices.getAllDoctors(paginator.page, paginator.limit);
-    if (!doctors) {
-        console.error("Doctors is undefined or null");
-        res.json([]);
+    const doctor = await userDoctorServices.findOneDoctor({ username: usernameParam });
+    if (!doctor) {
+      res.status(404).json({ error: `User with username ${usernameParam} not found` });
+      return;
     }
-    console.log("Doctors", doctors);
-    res.json({doctors});
-   } catch (error) {
 
-    console.error(error); //log de errores quitar
-    res.status(500).json({ error:'Failes to get doctors'});
-   }
-}*/
+    const {
+      password,
+    } = req.body as Partial<userInterface>;
+
+    const updatedDoctorPassword: userDoctorInterface = {
+      username: doctor.username,
+      email: doctor.email,
+      name: doctor.name,
+      lastname: doctor.lastname,
+      password: password && password.trim() !== '' ? password : doctor.password, // será actualizado si se envía uno nuevo
+    };
+
+   
+    if (password && password.trim() !== '') {
+      updatedDoctorPassword.password = await hashPassword(password);
+    }
+
+    const updated = await userDoctorServices.editDoctorByUsername(usernameParam, updatedDoctorPassword);
+    if (!updated) {
+      res.status(500).json({ error: 'Failed to update doctor' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Doctor password updated successfully' });
+
+  } catch (error) {
+    console.error('Error in edit doctor password:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+

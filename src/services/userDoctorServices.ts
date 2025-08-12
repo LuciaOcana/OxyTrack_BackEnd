@@ -28,5 +28,25 @@ export const userDoctorServices = {
         // Retornar los usuarios encontrados
         return users;
     },
+    // Buscar User por nombre de usuario para hacer LogIn
+    findDoctorUserByUsername: async (username: string) => {
+        return await userDoctorDB.findOne({ username: username })
+    },
+
+    // Actualizar un usuario por username
+    editDoctorByUsername: async (username: string, body: object) => {
+        console.log(body);
+        return await userDoctorDB.findOneAndReplace({ username }, body, { new: true });
+    },
+    // Buscar un usuario por cualquier filtro (ej: { username }, { email }, etc)
+  findOneDoctor: async (filter: object) => {
+    try {
+      const doctor = await userDoctorDB.findOne(filter);
+      return doctor;
+    } catch (error) {
+      console.error('Error en userServices.findOne:', error);
+      throw error;
+    }
+  },
 };
 

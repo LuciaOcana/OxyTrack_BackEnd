@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerDoctor, createAdmin, logInAdmin, getDoctorsList } from '../controllers/userAdminController';
+import { registerDoctor, createAdmin, logInAdmin, getDoctorsList, editDoctorByAdmin } from '../controllers/userAdminController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 
 const router = express.Router();
@@ -17,5 +17,6 @@ router.post("/createDoctor", authenticateJWT, registerDoctor);
 router.get("/getDoctors/:page/:limit",authenticateJWT, getDoctorsList); //TokenValidation, AdminValidation, getUsers);
 
 //Falta ruta editDoctor
+router.put("/editDoctorAdmin/:username",authenticateJWT, editDoctorByAdmin);
 
 export default router;
