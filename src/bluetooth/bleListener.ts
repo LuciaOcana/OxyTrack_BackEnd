@@ -17,7 +17,7 @@ function sendLoginStatusToESP() {
   if (dataCharacteristic) {
     const value = loginStatus.toString(); // "1" o "0"
     dataCharacteristic.write(Buffer.from(value), false);
-    console.log(`📤 Enviado al ESP32: loginStatus = ${value}`);
+    console.log(`( Estado del Log In = ${value} )`);
   } else {
     console.log('⚠️ No se pudo enviar loginStatus: dataCharacteristic no disponible');
   }
@@ -26,7 +26,7 @@ function sendLoginStatusToESP() {
 // Actualizar el estado del LogIn desde cualquie fichero externo
 export function setLoginStatus(status: number) {
   loginStatus = status === 1 ? 1 : 0;
-  console.log(`🔁 loginStatus actualizado a: ${loginStatus}`);
+  console.log(`( Estado del Log In actualizado a: ${loginStatus} )`);
   sendLoginStatusToESP(); // Notificar al ESP32 en tiempo real
 }
 
@@ -60,7 +60,7 @@ export function startBLEListener() {
 
       dataCharacteristic = characteristics[0];
       await dataCharacteristic.subscribeAsync();
-      console.log('📡 Suscripción activada para notificaciones BLE');
+      console.log(' * Notificaciones BLE activadas: datos nuevos llegarán automáticamente desde el ESP32 *');
 
 // ✅ Notificamos el estado de login actual
       sendLoginStatusToESP();

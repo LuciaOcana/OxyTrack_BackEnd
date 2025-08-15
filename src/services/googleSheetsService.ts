@@ -1,18 +1,26 @@
-// src/services/GoogleSheetsService.ts
-
+// src/services/googleSheetsService.ts
 import { google } from 'googleapis';
-import { JWT } from 'google-auth-library';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const auth = new JWT({
-  email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-  key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+dotenv.config();
+
+// Validación de credencial
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (!credentialsPath) {
+  throw new Error('❌ GOOGLE_APPLICATION_CREDENTIALS no está definida en el entorno');
+}
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: credentialsPath,
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
 
 /**
- * Inserta una nueva medida de SpO₂ a Google Sheets y elimina registros antiguos.
+ * Inserta una nueva medida de SpO₂ en Google Sheets
+ * Hoja: Usuario | Fecha | Hora | SpO₂
  */
 export async function insertSpO2ToSheet(
   username: string,
@@ -21,43 +29,58 @@ export async function insertSpO2ToSheet(
   sheetName: string
 ) {
   const now = new Date();
-  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-  const timeStr = now.toTimeString().split(' ')[0]; // HH:mm:ss
-
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().split(' ')[0];
   const newRow = [username, dateStr, timeStr, spo2];
 
   try {
-    // Obtener registros existentes
-    const res = await sheets.spreadsheets.values.get({
+    await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A2:D`,
-    });
-
-    const rows = res.data.values || [];
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-
-    const filteredRows = rows.filter(row => {
-      const rowDate = new Date(row[1]);
-      return rowDate >= cutoff;
-    });
-
-    filteredRows.push(newRow); // Añadir nuevo dato
-
-    // Subir datos de nuevo
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `${sheetName}!A2`,
-      valueInputOption: 'RAW',
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
-        values: filteredRows,
+        values: [newRow],
       },
     });
 
     console.log(`✅ SpO₂ añadido a Google Sheets para ${username}`);
   } catch (error) {
-    console.error('❌ Error al guardar en Google Sheets:', error);
+    console.error('❌ Error al guardar SpO₂ en Google Sheets:', error);
+    throw error;
+  }
+}
+
+/**
+ * Inserta valores IR y RED en otra hoja de Google Sheets
+ * Hoja: Usuario | Fecha | Hora | IR | RED
+ */
+export async function insertIRRedToSheet(
+  username: string,
+  ir: number,
+  red: number,
+  spreadsheetId: string,
+  sheetName: string
+) {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().split(' ')[0];
+  const newRow = [username, dateStr, timeStr, ir, red];
+
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetName}!A2:E`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [newRow],
+      },
+    });
+
+    console.log(`✅ IR/RED añadido a Google Sheets para ${username}`);
+  } catch (error) {
+    console.error('❌ Error al guardar IR y RED en Google Sheets:', error);
     throw error;
   }
 }
