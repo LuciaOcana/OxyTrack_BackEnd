@@ -3,11 +3,14 @@ import { Request, Response } from "express";
 import { loginAdmin, userAdminInterface } from "../models/userAdmin"
 import { userAdminServices } from "../services/userAdminServices"
 
+import { userServices } from "../services/userServices"
+
+
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
 import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
 import { paginatorInterface } from '../utils/paginator';
-import { hashPassword } from '../utils/auth/auth';
+import { invalidateToken, hashPassword } from '../utils/auth/auth';
 
 
 export async function createAdmin(req: Request, res: Response): Promise<void> {
@@ -39,9 +42,6 @@ export async function logInAdmin(req: Request, res: Response): Promise<void> {  
       res.status(404).json({ error: 'Admin no encontrado' });
       return;
     }
-
-
-
     const isMatch = await comparePassword(password, loggedUser.password);
     if (!isMatch) {
       res.status(401).json({ error: 'Contraseña incorrecta' });
@@ -63,7 +63,7 @@ export async function logInAdmin(req: Request, res: Response): Promise<void> {  
 
 export async function registerDoctor(req: Request, res: Response): Promise<void> {
   try {
-    const { username, email, name, lastname, password } = req.body;
+    const { username, email, name, lastname, patients = [], password } = req.body;
 
     if (!username || !email || !password || !name || !lastname) {
       res.status(400).json({ message: "Faltan campos obligatorios" });
@@ -75,10 +75,36 @@ export async function registerDoctor(req: Request, res: Response): Promise<void>
       email,
       name,
       lastname,
+      patients,
       password
     };
-
     const createdDoctor = await userAdminServices.createDoctor(newDoctor);
+
+    // 🔄 Actualizamos pacientes para asignarles este doctor
+    if (patients.length > 0) {
+      for (const patientString of patients) {
+          // Extraemos lo que está entre paréntesis
+    const match = patientString.match(/\(([^)]+)\)/);
+    if (!match) {
+      console.warn(`No se encontró username en: ${patientString}`);
+      continue;
+    }
+
+    const username = match[1]; // lo que está entre paréntesis
+        
+        const patient = await userAdminServices.findPatientByUsername(username);
+        if (patient) {
+           const doctorString = `${createdDoctor.name} ${createdDoctor.lastname} (${createdDoctor.username})`;
+      await userAdminServices.updatePatientDoctor(patient.username, doctorString);
+
+        } else {
+          console.warn(`Paciente no encontrado: ${username}`);
+        }
+      }
+    }
+
+    //const createdDoctor = await userAdminServices.createDoctor(newDoctor);
+
     res.status(201).json(createdDoctor);
   } catch (error) {
     console.error("Error al registrar doctor:", error);
@@ -122,6 +148,7 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
       email,
       name,
       lastname,
+      patients,
       password,
     } = req.body as Partial<userDoctorInterface>;
 
@@ -137,7 +164,9 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
       username: username && username.trim() !== '' ? username : doctor.username,
       email: email && email.trim() !== '' ? email : doctor.email,
       name: name && name.trim() !== '' ? name : doctor.name,
+      patients: [],
       lastname: lastname && lastname.trim() !== '' ? lastname : doctor.lastname,
+
       password: password && password.trim() !== '' ? password : doctor.password,
     };
 
@@ -159,6 +188,66 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
     res.status(500).json({ error: 'Internal server error' });
   }
 }
+export async function logOutAdmin(req: Request, res: Response): Promise<void> {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]; // token Bearer
+    if (!token) {
+      res.status(400).json({ message: 'Token no proporcionado' });
+      return;
+    }
 
+    invalidateToken(token); // invalida el token actual
 
+    res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+}
+export async function getAllUsers(req: Request, res: Response): Promise<void> {
+  try {
+    console.log("Get doctors");
+    const usersWNDoctor = await userAdminServices.getUsersWithoutDoctor();
+    if (!usersWNDoctor) {
+      console.error("Doctors is undefined or null");
+      res.json([]);
+    }
+    console.log("doctors", usersWNDoctor);
+    res.json({ usersWNDoctor });
+  } catch (error) {
+
+    console.error(error); //log de errores quitar
+    res.status(500).json({ error: 'Failes to get doctors' });
+  }
+}
+/*
+export async function autoDoctorPAtienteEdit(userDoctorInterface newDoctor): Promise<void>{
+  
+    // 🔄 Actualizamos pacientes para asignarles este doctor
+    if (patients.length > 0) {
+      for (const patientString of patients) {
+          // Extraemos lo que está entre paréntesis
+    const match = patientString.match(/\(([^)]+)\)/);
+    if (!match) {
+      console.warn(`No se encontró username en: ${patientString}`);
+      continue;
+    }
+
+    const username = match[1]; // lo que está entre paréntesis
+        
+        const patient = await userAdminServices.findPatientByUsername(username);
+        if (patient) {
+          const updated = await userAdminServices.updatePatientDoctor(patient.username, {
+            name: newDoctor.name,
+            lastname: newDoctor.lastname,
+            username: newDoctor.username
+          });
+
+        } else {
+          console.warn(`Paciente no encontrado: ${username}`);
+        }
+      }
+    }
+}
+*/
 

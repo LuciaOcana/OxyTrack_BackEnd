@@ -2,9 +2,10 @@
 import { Request, Response } from 'express';
 import { clients } from '../index';
 import { insertSpO2ToSheet, insertIRRedToSheet } from '../services/googleSheetsService';
+import {notifyDoctorByPatientUsername} from '../controllers/userDoctorController'
 
 export const ANALYSIS_WINDOW_SIZE = 5; // Nº de muestras necesarias para calcular SpO₂
-export const CALCULATION_INTERVAL_MS = 120000; // Intervalo de cálculo (2 minutos)
+export const CALCULATION_INTERVAL_MS: number  = 120000; // Intervalo de cálculo (2 minutos)
 
 let measurementBatch: { ir: number; red: number }[] = [];
 let latestSpO2: number | null = null;
@@ -66,38 +67,46 @@ setInterval(async () => {
     return;
   }
 
+  console.log(`(${measurementBatch.length}/${ANALYSIS_WINDOW_SIZE}) muestras obtenidas, calcculando el valor de %SpO₂`);
   const irs = measurementBatch.map(m => m.ir);
   const reds = measurementBatch.map(m => m.red);
   const spo2 = estimateSpO2(irs, reds);
 
-  if (spo2 === null) {
-    console.log('🚫 No se pudo calcular SpO₂ por datos inválidos.');
+  if (spo2 === null || spo2 <= 85) {
+    console.log('⚠️ Advertencia: No se detecta contacto con el sensor. Verifica que esté correctamente colocado.');
     measurementBatch = [];
     return;
   }
-
-  latestSpO2 = spo2;
-  console.log(`🩸 SpO₂ estimado: ${latestSpO2}%`);
-
-  if (activeUsername) {
-    try {
-      await insertSpO2ToSheet(activeUsername, latestSpO2, SHEET_ID, 'SpO2');
-    } catch (err) {
-      console.error('❌ Error guardando SpO₂ en Google Sheets:', err);
-    }
+  if (spo2 <= 90 && spo2 > 85) {
+    console.warn(`⚠️ SpO₂ bajo (${spo2}%). Verifica el sensor.`);
+if (activeUsername !== null) {
+  await notifyDoctorByPatientUsername(activeUsername);    return;
   }
+  else {
+    latestSpO2 = spo2;
+    console.log(`🩸 Valor del %SpO₂ estimado: ${latestSpO2}%`);
 
-  const data = {
-    username: activeUsername,
-    spo2: latestSpO2,
-    timestamp: new Date().toISOString(),
-  };
-
-  clients.forEach(ws => {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify(data));
+    if (activeUsername) {
+      try {
+        await insertSpO2ToSheet(activeUsername, latestSpO2, SHEET_ID, 'SpO2');
+      } catch (err) {
+        console.error('❌ Error guardando SpO₂ en Google Sheets:', err);
+      }
     }
-  });
+
+    const data = {
+      username: activeUsername,
+      spo2: latestSpO2,
+      timestamp: new Date().toISOString(),
+    };
+
+    clients.forEach(ws => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify(data));
+      }
+    });
+  }
+  }
 
   measurementBatch = [];
 }, CALCULATION_INTERVAL_MS);

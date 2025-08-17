@@ -1,4 +1,5 @@
 import { getDoctorsList } from "../controllers/userAdminController";
+import { userDB } from "../models/user";
 import { userAdminDB } from "../models/userAdmin";
 import { userDoctorDB } from "../models/userDoctor";
 import { hashPassword } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
@@ -41,6 +42,7 @@ export const userAdminServices = {
         email: string;
         name: string;
         lastname: string;
+        patients:[];
         password: string;
     }) => {
         try {
@@ -75,5 +77,49 @@ export const userAdminServices = {
 
         // Retornar los usuarios encontrados
         return doctors;
-    }
+    },
+    getUsersWithoutDoctor: async () => {
+  try {
+    const patients = await userDB.find(
+      { doctor: { $in: [null, ""] } }, 
+      'username name lastname' // 👈 ahora también devuelve username
+    );
+
+    // Devuelve objetos en vez de solo strings
+    return patients.map(p => ({
+      username: p.username,
+      name: p.name,
+      lastname: p.lastname
+    }));
+  } catch (error) {
+    console.error("Error al obtener pacientes sin doctor:", error);
+    throw new Error("Error al obtener pacientes sin doctor");
+  }
+},
+
+  findPatientByUsername: async (username: string) => {
+  try {
+    const patient = await userDB.findOne({ username });
+    return patient; // devuelve null si no existe
+  } catch (error) {
+    console.error("Error buscando paciente:", error);
+    throw error;
+  }
+},
+// Actualiza el doctor de un paciente
+updatePatientDoctor: async (username: string, doctorData: String) => {
+  try {
+        console.error("Datos del doctor:", doctorData);
+
+    const updatedPatient = await userDB.findOneAndUpdate(
+      { username },
+      { doctor: doctorData }, // aquí se actualiza el campo doctor
+      { new: true } // devuelve el paciente actualizado
+    );
+    return updatedPatient; // null si no existe
+  } catch (error) {
+    console.error("Error actualizando paciente:", error);
+    throw error;
+  }
+}
 };

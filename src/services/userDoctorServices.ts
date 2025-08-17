@@ -48,5 +48,6 @@ export const userDoctorServices = {
       throw error;
     }
   },
+  
 };
 

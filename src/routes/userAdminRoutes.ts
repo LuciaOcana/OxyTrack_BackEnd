@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerDoctor, createAdmin, logInAdmin, getDoctorsList, editDoctorByAdmin } from '../controllers/userAdminController';
+import { registerDoctor, createAdmin, logInAdmin, getDoctorsList, editDoctorByAdmin, logOutAdmin, getAllUsers } from '../controllers/userAdminController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 
 const router = express.Router();
@@ -18,5 +18,11 @@ router.get("/getDoctors/:page/:limit",authenticateJWT, getDoctorsList); //TokenV
 
 //Falta ruta editDoctor
 router.put("/editDoctorAdmin/:username",authenticateJWT, editDoctorByAdmin);
+
+//Ruta para obtener la información de todos los usuarios sin doctor
+router.get("/getUsers",authenticateJWT, getAllUsers); //TokenValidation, AdminValidation, getUsers);
+
+// Ruta log out
+router.post("/logout",logOutAdmin);
 
 export default router;

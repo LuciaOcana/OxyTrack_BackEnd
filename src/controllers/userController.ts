@@ -5,7 +5,7 @@ import { startMeasurementInternal } from '../controllers/IRController';
 import { setLoginStatus } from '../bluetooth/bleListener';
 import { paginatorInterface } from '../utils/paginator';
 import { login, userInterface } from "../models/user"
-import { hashPassword } from '../utils/auth/auth';
+import {invalidateToken, hashPassword } from '../utils/auth/auth';
 
 
 
@@ -148,6 +148,7 @@ export async function editUser(req: Request, res: Response): Promise<void> {
       height: height && height.trim() !== '' ? height : user.height,
       weight: weight && weight.trim() !== '' ? weight: user.weight,
       medication: user.medication, // se mantiene
+      doctor: user.doctor,
       password: user.password, // será actualizado si se envía uno nuevo
     };
 
@@ -169,5 +170,20 @@ export async function editUser(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: 'Internal server error' });
   }
 }
+export async function logOut(req: Request, res: Response): Promise<void> {
+   try {
+    const token = req.headers.authorization?.split(' ')[1]; // token Bearer
+    if (!token) {
+      res.status(400).json({ message: 'Token no proporcionado' });
+      return;
+    }
 
+    invalidateToken(token); // invalida el token actual
+
+    res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+}
 

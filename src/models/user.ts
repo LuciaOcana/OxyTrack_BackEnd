@@ -12,6 +12,7 @@ export interface userInterface{
     weight: string,
     //lungCapacity: string,
     medication: [],
+    doctor: string,
     password: string
 }
 
@@ -50,6 +51,9 @@ export const userSchema = new Schema<userInterface>({
         required: true,
     },
     medication: [],
+    doctor: {
+        type: String,
+    },
     password: {
         type: String,
         required: true,

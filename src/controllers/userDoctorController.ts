@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { clients } from "../index"; // Ajusta ruta
+
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
 import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
@@ -6,7 +8,7 @@ import { userServices } from "../services/userServices";
 import { userInterface } from "../models/user"
 
 import { paginatorInterface } from '../utils/paginator';
-import { hashPassword } from '../utils/auth/auth';
+import {invalidateToken, hashPassword } from '../utils/auth/auth';
 
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
@@ -117,6 +119,7 @@ export async function updatePasswordDoctor(req: Request, res: Response): Promise
       email: doctor.email,
       name: doctor.name,
       lastname: doctor.lastname,
+      patients: doctor.patients,
       password: password && password.trim() !== '' ? password : doctor.password, // será actualizado si se envía uno nuevo
     };
 
@@ -139,3 +142,47 @@ export async function updatePasswordDoctor(req: Request, res: Response): Promise
   }
 }
 
+export async function notifyDoctorByPatientUsername(username: string): Promise<void> {
+  const doctor = await userDoctorServices.findOneDoctor({ patients: username });
+
+  if (!doctor) {
+    console.warn(`No se encontró un doctor para el paciente ${username}`);
+    return;
+  }
+
+  const payload = {
+    type: "patientAlert",
+    target: doctor.username, // Para que el frontend sepa a quién va
+    patient: username,
+    message: `⚠️ Alerta automática: el paciente ${username} tiene un nivel de SpO₂ bajo.`
+  };
+
+  clients.forEach(client => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(payload));
+    }
+  });
+
+  console.log(`📡 Notificación enviada a todos los WS, objetivo: ${doctor.username}`);
+}
+  async function sendNotification(to: string, message: string): Promise<void> {
+  console.log(`Sending notification to ${to}: ${message}`);
+  // Aquí podrías integrar con un servicio real como SendGrid, Firebase, etc.
+}
+
+export async function logOutDoctor(req: Request, res: Response): Promise<void> {
+   try {
+    const token = req.headers.authorization?.split(' ')[1]; // token Bearer
+    if (!token) {
+      res.status(400).json({ message: 'Token no proporcionado' });
+      return;
+    }
+
+    invalidateToken(token); // invalida el token actual
+
+    res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+}

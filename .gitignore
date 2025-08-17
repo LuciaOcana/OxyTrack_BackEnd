@@ -3,3 +3,12 @@ node_modules/
 dist/
 .env
 src/utils/auth/clave_UPC_TFG_Lucia_Ocana.json
+src/index.ts
+src/utils/auth/192.168.1.48.pem
+src/utils/auth/192.168.1.48-key.pem
+
+
+src/utils/auth/Certificados_antiguos/192.168.1.48+1-key.pem
+src/utils/auth/Certificados_antiguos/192.168.1.48+1.pem
+src/utils/auth/Certificados_antiguos/localhost-key.pem
+src/utils/auth/Certificados_antiguos/localhost.pem

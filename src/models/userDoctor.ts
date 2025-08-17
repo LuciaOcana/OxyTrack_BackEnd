@@ -1,11 +1,12 @@
 import { model, Schema } from "mongoose";
 import internal from "stream";
 
-export interface userDoctorInterface{
+export interface userDoctorInterface {
     username: string,
     email: string,
     name: string,
     lastname: string,
+    patients: [],
     password: string
 }
 
@@ -28,12 +29,13 @@ export const userDoctorSchema = new Schema<userDoctorInterface>({
         type: String,
         required: true,
     },
+    patients: [],
     password: {
         type: String,
         required: true,
     }
 })
 
-export type login = Pick<userDoctorInterface, 'username' | 'password' >
+export type login = Pick<userDoctorInterface, 'username' | 'password'>
 
 export const userDoctorDB = model<userDoctorInterface>('userDoctor', userDoctorSchema)
