@@ -4,7 +4,7 @@ services:
     container_name: backend
     build: C:\Users\lucia\Desktop\universidad\TFG\OxyTrack_BackEnd\DockerFile   # <-- Aquí pones la ruta donde está tu Dockerfile
 
-    image: TFG_LuciaOcana_UPC/backend:0
+    image: tfg_luciaocana_upc/backend:0
     ports:
       - "5000:5000"
     restart: always
