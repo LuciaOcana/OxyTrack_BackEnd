@@ -10,7 +10,7 @@
     "dev": "ts-node-dev src/index.ts",
     "slint": "ts-standard",
     "build": "tsc",
-    "build:docker": "node --max-old-space-size=2048 ./node_modules/typescript/bin/tsc",
+    "build:docker": "node --max-old-space-size=2048 ./node_modules/.bin/tsc",
     "start": "node build/index.js",
     "tsc": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
