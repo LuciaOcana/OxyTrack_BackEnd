@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendToDoctor  } from "../index"; // Ajusta ruta
+import { sendToDoctor } from "../index"; // Ajusta ruta
 
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
@@ -109,7 +109,7 @@ export async function updatePasswordDoctor(req: Request, res: Response): Promise
       res.status(404).json({ error: `User with username ${usernameParam} not found` });
       return;
     }
-console.log("imprime ", req);
+    console.log("imprime ", req);
     const {
       password,
     } = req.body as Partial<userInterface>;
