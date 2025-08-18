@@ -1,21 +1,15 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-
 // src/index.ts
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-/*
-import http from 'http'; // ✅ Usamos https en lugar de http
-import fs from 'fs';
-import path from 'path'; // ✅ para rutas seguras entre dist/src
-*/
 
-import https from 'https'; // ✅ Usamos https en lugar de http
+import https from 'https';
 import http from 'http';
 import fs from 'fs';
-import path from 'path'; // ✅ para rutas seguras entre dist/src
+import path from 'path';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import connectDB from './config/db';
@@ -37,7 +31,7 @@ app.use(morgan('dev'));
 
 // Rutas
 app.get('/', (req: Request, res: Response) => {
-    res.json({ message: '# API funcionando correctamente' });
+  res.json({ message: '# API funcionando correctamente' });
 });
 
 app.use('/api/users', userRoutes);
@@ -48,60 +42,109 @@ app.use('/api/oxi', irRoutes);
 // Iniciar BLE al arrancar el backend
 startBLEListener(); // ← Lanza la escucha BLE
 
+// -----------------------------------------------------------------
+// Servidor HTTP (puedes cambiar a HTTPS si habilitas certificados)
+const server = http.createServer(app);
 
 // -----------------------------------------------------------------
+// 🔌 WebSocket Servers por rol
+const doctorWSS = new WebSocketServer({ server, path: "/doctor" });
+const patientWSS = new WebSocketServer({ server, path: "/paciente" });
 
-//C:\Users\lucia\Desktop\universidad\TFG\OxyTrack_BackEnd\src\utils\auth
-// ✅ Leer los certificados SSL generados con mkcert (usa path.resolve para que funcione con dist/)
-//const privateKey = fs.readFileSync(path.resolve(__dirname, '../src/utils/auth/192.168.1.48-key.pem'), 'utf8');
-//const certificate = fs.readFileSync(path.resolve(__dirname, '../src/utils/auth/192.168.1.48.pem'), 'utf8');
-//const credentials = { key: privateKey, cert: certificate };
-// ----------------------------------------------------------------------------------
-// 🔌 WebSocket Server
-//const server = https.createServer(credentials, app); // Crear servidor HTTP con Express
-const server = http.createServer(app); // Crear servidor HTTP con Express
+// Diccionarios de conexiones
+let connectedDoctors: Record<string, WebSocket> = {};
+let connectedPatients: Record<string, WebSocket> = {};
 
-//const wss = new WebSocketServer({ server }); // Crear WebSocket sobre ese servidor
-const ws = new WebSocketServer({ server }); // Crear WebSocket sobre ese servidor
+// -----------------------------------------------------------------
+// Conexiones de doctores
+doctorWSS.on("connection", (ws) => {
+  console.log("👨‍⚕️ Doctor conectado");
 
-let connectedClients: WebSocket[] = [];
-export const clients = connectedClients;
+  ws.on("message", (msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      if (data.type === "init" && data.username) {
+        connectedDoctors[data.username] = ws;
+        console.log(`✅ Doctor ${data.username} registrado`);
+      }
+    } catch (err) {
+      console.error("❌ Error al procesar mensaje WS Doctor:", err);
+    }
+  });
 
-/*wss.on('connection', (ws) => {
-  console.log('📡 Cliente WebSocket conectado');
-*/
-
-ws.on('connection', (ws) => {
-  console.log('📡 Cliente WebSocket conectado');
-
-  
-  connectedClients.push(ws);
-
-  ws.on('close', () => {
-    console.log('🔌 Cliente WebSocket desconectado');
-    connectedClients = connectedClients.filter(client => client !== ws);
+  ws.on("close", () => {
+    for (const [username, client] of Object.entries(connectedDoctors)) {
+      if (client === ws) {
+        delete connectedDoctors[username];
+        console.log(`🔌 Doctor ${username} desconectado`);
+      }
+    }
   });
 });
 
-// 🌍 Exportar función para emitir SpO₂ a todos los clientes
+// -----------------------------------------------------------------
+// Conexiones de pacientes
+patientWSS.on("connection", (ws) => {
+  console.log("🧑‍🦱 Paciente conectado");
+
+  ws.on("message", (msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      if (data.type === "init" && data.username) {
+        connectedPatients[data.username] = ws;
+        console.log(`✅ Paciente ${data.username} registrado`);
+      }
+    } catch (err) {
+      console.error("❌ Error al procesar mensaje WS Paciente:", err);
+    }
+  });
+
+  ws.on("close", () => {
+    for (const [username, client] of Object.entries(connectedPatients)) {
+      if (client === ws) {
+        delete connectedPatients[username];
+        console.log(`🔌 Paciente ${username} desconectado`);
+      }
+    }
+  });
+});
+
+// -----------------------------------------------------------------
+// Función para enviar a un doctor específico
+export function sendToDoctor(username: string, payload: any) {
+  const doctor = connectedDoctors[username];
+  if (doctor && doctor.readyState === WebSocket.OPEN) {
+    doctor.send(JSON.stringify(payload));
+  } else {
+    console.warn(`⚠️ No se pudo enviar notificación, doctor ${username} no conectado`);
+  }
+}
+
+// Función para enviar a un paciente específico
+export function sendToPatient(username: string, payload: any) {
+  const patient = connectedPatients[username];
+  if (patient && patient.readyState === WebSocket.OPEN) {
+    patient.send(JSON.stringify(payload));
+  } else {
+    console.warn(`⚠️ No se pudo enviar notificación, paciente ${username} no conectado`);
+  }
+}
+
+// Función para emitir broadcast (a todos)
 export function broadcastSpO2(spo2: number) {
   const message = JSON.stringify({ spo2 });
 
-  connectedClients.forEach(client => {
-    if (client.readyState === client.OPEN) {
+  // A todos los pacientes
+  Object.values(connectedPatients).forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
       client.send(message);
     }
   });
 }
 
-// ----------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 // Iniciar servidor (Express + WebSocket)
 const PORT: number = 5000;
 server.listen(PORT, () => {
   console.log(`# Servidor Express + WebSocket corriendo en http://localhost:${PORT}`);
 });
-// Puerto de escucha
-//const PORT: number = 5000;
-//app.listen(PORT, () => {
-//    console.log(`# Servidor corriendo en http://localhost:${PORT}`);
-//});

@@ -14,7 +14,7 @@ router.post("/logInAdmin", logInAdmin);
 router.post("/createDoctor", authenticateJWT, registerDoctor);
 
 //Ruta para obtener la información de todos los doctores
-router.get("/getDoctors/:page/:limit",authenticateJWT, getDoctorsList); //TokenValidation, AdminValidation, getUsers);
+router.get("/getDoctors/:page/:limit",authenticateJWT, getDoctorsList); 
 
 //Falta ruta editDoctor
 router.put("/editDoctorAdmin/:username",authenticateJWT, editDoctorByAdmin);
