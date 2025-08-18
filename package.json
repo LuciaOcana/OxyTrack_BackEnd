@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "slint": "ts-standard",
+    "build": "tsc",
     "start": "node build/index.js",
     "tsc": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -40,6 +41,7 @@
     "@types/noble": "^0.0.44",
     "@types/node": "^22.15.30",
     "@types/nodemailer": "^6.4.17",
-    "@types/ws": "^8.18.1"
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.2"
   }
 }
