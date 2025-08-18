@@ -1,20 +1,23 @@
-# 1. Imagen base con Node
-FROM node:20.19.2
+# Usamos Node LTS
+FROM node:20
 
-# 2. Crear carpeta de trabajo dentro del contenedor
+# Creamos el directorio de la app
 WORKDIR /app
 
-# 3. Copiar package.json y package-lock.json
+# Copiamos package.json y package-lock.json
 COPY package*.json ./
 
-# 4. Instalar dependencias
+# Instalamos dependencias
 RUN npm install
 
-# 5. Copiar todo el código al contenedor
+# Copiamos todo el código
 COPY . .
 
-# 6. Exponer el puerto que usará tu app
-EXPOSE 5000
+# Compilamos TypeScript
+RUN npm run build
 
-# 7. Comando para iniciar tu app ini
+# Puerto que expondrá la app
+EXPOSE 3000
+
+# Comando para iniciar
 CMD ["npm", "start"]

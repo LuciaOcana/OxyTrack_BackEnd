@@ -6,12 +6,14 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
+    "outDir": "./build",
     "rootDir": "./src",
    // "noImplicitAny": false
   },
   "include": [
-    "src/**/*.ts"
+    "src",
+    "src/types",
+    "global.d.ts"
   ],
   "exclude": [
     "node_modules"

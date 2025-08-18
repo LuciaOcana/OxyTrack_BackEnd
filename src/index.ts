@@ -144,7 +144,7 @@ export function broadcastSpO2(spo2: number) {
 
 // -----------------------------------------------------------------
 // Iniciar servidor (Express + WebSocket)
-const PORT: number = 5000;
+const PORT: number = 3000;
 server.listen(PORT, () => {
   console.log(`# Servidor Express + WebSocket corriendo en http://localhost:${PORT}`);
 });
