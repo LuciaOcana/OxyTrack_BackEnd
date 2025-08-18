@@ -1,5 +1,5 @@
 import express from 'express';
-import { loginDoctor, getUserList, editUserByDoctor, logOutDoctor } from '../controllers/userDoctorController';
+import { loginDoctor, getUserList, editUserByDoctor, updatePasswordDoctor, logOutDoctor } from '../controllers/userDoctorController';
 
 import { authenticateJWT } from '../middlewares/authMiddleware';
 
@@ -15,6 +15,7 @@ router.get("/getUsers/:page/:limit",authenticateJWT, getUserList); //TokenValida
 router.put("/editUserDoctor/:username",authenticateJWT, editUserByDoctor);
 
 //Falta ruta para que el Doctor pueda cambiar su contraseña y no solo pueda cambiarsela el admin
+router.put("/passChangeDoctor/:username",authenticateJWT, updatePasswordDoctor);
 
 // Ruta para alertar al doctor
 

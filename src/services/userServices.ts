@@ -1,4 +1,4 @@
-import { userDB } from "../models/user";
+import { userDB, userInterface } from "../models/user";
 import { hashPassword } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
 
 
@@ -34,9 +34,14 @@ export const userServices = {
     },
 
     // Actualizar un usuario por username
-    editUserByUsername: async (username: string, body: object) => {
-        console.log(body);
-        return await userDB.findOneAndReplace({ username }, body, { new: true });
+    editUserByUsername: async (username: string, updatedFields: Partial<userInterface>) => {
+        //console.log(body);
+        //return await userDB.findOneAndReplace({ username }, body, { new: true });
+        return await userDB.findOneAndUpdate(
+    { username },
+    { $set: updatedFields },
+    { new: true }
+  );
     },
     // Buscar un usuario por cualquier filtro (ej: { username }, { email }, etc)
   findOne: async (filter: object) => {

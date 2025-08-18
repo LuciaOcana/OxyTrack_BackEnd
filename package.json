@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "slint": "ts-standard",
-    "build": "node --max-old-space-size=2048 ./node_modules/.bin/tsc",
+    "build": "tsc",
     "start": "node build/index.js",
     "tsc": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

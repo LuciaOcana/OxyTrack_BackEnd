@@ -36,6 +36,7 @@ export const userDoctorServices = {
     // Actualizar un usuario por username
     editDoctorByUsername: async (username: string, body: object) => {
         console.log(body);
+        
         return await userDoctorDB.findOneAndReplace({ username }, body, { new: true });
     },
     // Buscar un usuario por cualquier filtro (ej: { username }, { email }, etc)

@@ -67,7 +67,7 @@ export async function getUserList(req: Request, res: Response): Promise<void> {
 
 export async function editUserByDoctor(req: Request, res: Response): Promise<void> {
   try {
-    const usernameParam = req.params.username; //lo coge de la URL, en el frontEnd hay que hacer que se le pase por URL
+    const usernameParam = req.params.username;
 
     const user = await userServices.findOne({ username: usernameParam });
     if (!user) {
@@ -75,19 +75,15 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const {
-      medication,
-    } = req.body as Partial<userInterface>;
+    const { medication } = req.body as Partial<userInterface>;
 
-    // Partimos de los datos actuales
-    const updatedUser: userInterface = { ...user };
-
-    // Solo actualizamos medication si llega con datos
+    // 🔹 Construir objeto con solo los campos que quieras actualizar
+    const updatedFields: Partial<userInterface> = {};
     if (Array.isArray(medication) && medication.length > 0) {
-      updatedUser.medication = medication;
+      updatedFields.medication = medication;
     }
 
-    const updated = await userServices.editUserByUsername(usernameParam, updatedUser);
+    const updated = await userServices.editUserByUsername(usernameParam, updatedFields);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update user' });
       return;
@@ -102,16 +98,18 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
 }
 
 
+
 export async function updatePasswordDoctor(req: Request, res: Response): Promise<void> {
   try {
     const usernameParam = req.params.username;
 
     const doctor = await userDoctorServices.findOneDoctor({ username: usernameParam });
+    console.log(doctor);
     if (!doctor) {
       res.status(404).json({ error: `User with username ${usernameParam} not found` });
       return;
     }
-
+console.log("imprime ", req);
     const {
       password,
     } = req.body as Partial<userInterface>;
