@@ -16,5 +16,5 @@ COPY . .
 # 6. Exponer el puerto que usará tu app
 EXPOSE 5000
 
-# 7. Comando para iniciar tu app
+# 7. Comando para iniciar tu app ini
 CMD ["npm", "start"]
