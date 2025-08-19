@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, logIn,verifyUserPassword, editUser, logOut } from '../controllers/userController';
+import { createUser, logIn,verifyUserPassword, editUser, resetPassword, getUser, logOut } from '../controllers/userController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 
 const router = express.Router();
@@ -14,7 +14,11 @@ router.post("/logIn", logIn);
 router.post("/verificarPassword/:username", verifyUserPassword);
 
 //Ruta per fer el edit de un user
-router.put("/editUser/:username", editUser);
+router.put("/editUser/:username",authenticateJWT, editUser);
+
+router.post("/resetPassword",authenticateJWT, resetPassword);
+
+router.get("/getUser/:username",authenticateJWT, getUser)
 
 // Ruta log out
 router.post("/logout",logOut);

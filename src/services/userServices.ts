@@ -54,4 +54,37 @@ export const userServices = {
     }
   },
 
+  updatePassword: async(username: string, newPassword: string) => {
+  try {
+    const result = await userDB.updateOne(
+      { username },
+      { $set: { password: newPassword } }
+    );
+
+    return result.modifiedCount > 0;
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return false;
+  }
+},
+
+getUserByUsername: async (username: string) => {
+  try {
+    const user = await userDB.findOne(
+      { username: username },
+      { password: 0 } // 👈 excluimos el campo password
+    );
+
+    if (!user) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Error en getUserByUsername:", error);
+    throw new Error("Error al obtener usuario");
+  }
+},
+
+
 };
