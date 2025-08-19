@@ -9,7 +9,6 @@ import {invalidateToken, hashPassword } from '../utils/auth/auth';
 
 
 
-
 export async function createUser(req: Request, res: Response): Promise<void> {
   try {
     const { birthDate, password, ...otherData } = req.body;

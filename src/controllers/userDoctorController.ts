@@ -101,34 +101,27 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
 
 export async function updatePasswordDoctor(req: Request, res: Response): Promise<void> {
   try {
-    const usernameParam = req.params.username;
+        console.log("Entroooo");
 
-    const doctor = await userDoctorServices.findOneDoctor({ username: usernameParam });
+   // const usernameParam = req.params.username;
+    const { username, password } = req.body as Partial<userInterface>;
+
+    const doctor = await userDoctorServices.findOneDoctor({ username: username });
     console.log(doctor);
     if (!doctor) {
-      res.status(404).json({ error: `User with username ${usernameParam} not found` });
+      res.status(404).json({ error: `User with username ${username} not found` });
       return;
     }
     console.log("imprime ", req);
-    const {
-      password,
-    } = req.body as Partial<userInterface>;
+   // const { password } = req.body as Partial<userInterface>;
 
-    const updatedDoctorPassword: userDoctorInterface = {
-      username: doctor.username,
-      email: doctor.email,
-      name: doctor.name,
-      lastname: doctor.lastname,
-      patients: doctor.patients,
-      password: password && password.trim() !== '' ? password : doctor.password, // será actualizado si se envía uno nuevo
-    };
-
-
+    const updatedDoctorPassword: Partial<userDoctorInterface> = { };
     if (password && password.trim() !== '') {
       updatedDoctorPassword.password = await hashPassword(password);
     }
+  const usernamee: string | undefined = updatedDoctorPassword.username?.toString();
 
-    const updated = await userDoctorServices.editDoctorByUsername(usernameParam, updatedDoctorPassword);
+    const updated = await userDoctorServices.editDoctorByUsername(usernamee!, updatedDoctorPassword);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update doctor' });
       return;

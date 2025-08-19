@@ -6,7 +6,8 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./build",
+    //"outDir": "./build",
+    "outDir": "./dist",
     "rootDir": "./src",
    // "noImplicitAny": false
   },
