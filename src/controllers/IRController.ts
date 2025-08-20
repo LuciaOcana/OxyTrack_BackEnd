@@ -92,11 +92,14 @@ async function calculateAndDispatch(): Promise<void> {
       }
     }
 
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000; // minutos → ms
+    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, -1); // quita la "Z"
     // Envía por WebSocket
     const data = {
       username: activeUsername,
       spo2: latestSpO2,
-      timestamp: new Date().toISOString(),
+      timestamp: localISOTime,
     };
     try {
       sendToPatient(activeUsername, data);

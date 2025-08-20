@@ -16,7 +16,7 @@ router.post("/verificarPassword/:username", verifyUserPassword);
 //Ruta per fer el edit de un user
 router.put("/editUser/:username",authenticateJWT, editUser);
 
-router.post("/resetPassword",authenticateJWT, resetPassword);
+router.post("/resetPassword", resetPassword);
 
 router.get("/getUser/:username",authenticateJWT, getUser)
 
