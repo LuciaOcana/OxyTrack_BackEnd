@@ -49,6 +49,20 @@ export const userDoctorServices = {
       throw error;
     }
   },
+
+    updatePassword: async(username: string, newPassword: string) => {
+  try {
+    const result = await userDoctorDB.updateOne(
+      { username },
+      { $set: { password: newPassword } }
+    );
+
+    return result.modifiedCount > 0;
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return false;
+  }
+},
   
 };
 

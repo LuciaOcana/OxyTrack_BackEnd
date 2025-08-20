@@ -116,24 +116,25 @@ export async function updatePasswordDoctor(req: Request, res: Response): Promise
         console.log("Entroooo");
 
    // const usernameParam = req.params.username;
-    const { username, password } = req.body as Partial<userInterface>;
+    const { username, newPassword } = req.body;
+        console.log(username, newPassword);
 
+     if (!username || !newPassword) {
+      res.status(400).json({ error: "Username and new password are required" });
+      return;
+    }
     const doctor = await userDoctorServices.findOneDoctor({ username: username });
     console.log(doctor);
     if (!doctor) {
       res.status(404).json({ error: `User with username ${username} not found` });
       return;
     }
-    console.log("imprime ", req);
-   // const { password } = req.body as Partial<userInterface>;
+  // Hashear nueva contraseña
+    const hashedPassword = await hashPassword(newPassword);
 
-    const updatedDoctorPassword: Partial<userDoctorInterface> = { };
-    if (password && password.trim() !== '') {
-      updatedDoctorPassword.password = await hashPassword(password);
-    }
-  const usernamee: string | undefined = updatedDoctorPassword.username?.toString();
+    // Actualizar solo el password
+    const updated = await userDoctorServices.updatePassword(username, hashedPassword);
 
-    const updated = await userDoctorServices.editDoctorByUsername(usernamee!, updatedDoctorPassword);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update doctor' });
       return;

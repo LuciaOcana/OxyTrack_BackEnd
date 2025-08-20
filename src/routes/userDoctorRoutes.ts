@@ -12,10 +12,10 @@ router.post("/doctorLogin", loginDoctor);
 router.get("/getUsers/:page/:limit",authenticateJWT, getUserList); //TokenValidation, AdminValidation, getUsers);
 
 //Ruta de editUser
-router.put("/editUserDoctor/:username",authenticateJWT, editUserByDoctor);
+router.put("/editUserDoctor",authenticateJWT, editUserByDoctor);
 
 //Falta ruta para que el Doctor pueda cambiar su contraseña y no solo pueda cambiarsela el admin
-router.put("/passChangeDoctor",authenticateJWT, updatePasswordDoctor);
+router.post("/resetPasswordDoctor", updatePasswordDoctor);
 
 // Ruta para alertar al doctor
 
