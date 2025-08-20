@@ -78,12 +78,24 @@ export async function editUserByDoctor(req: Request, res: Response): Promise<voi
     const { medication } = req.body as Partial<userInterface>;
 
     // 🔹 Construir objeto con solo los campos que quieras actualizar
-    const updatedFields: Partial<userInterface> = {};
-    if (Array.isArray(medication) && medication.length > 0) {
-      updatedFields.medication = medication;
-    }
+    
+   const updatedUser: userInterface = {
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      lastname: user.lastname,
+      birthDate: user.birthDate,
+      age: user.age,                            // 🔹 mantiene si no se cambia
+      height: user.height,
+      weight: user.weight,
+medication:
+    Array.isArray(medication) && medication.length > 0
+      ? medication               // ✅ usa el array nuevo si llega con datos
+      : user.medication || [],       doctor: user.doctor,
+      password: user.password, // será actualizado si se envía uno nuevo
+    };
 
-    const updated = await userServices.editUserByUsername(usernameParam, updatedFields);
+    const updated = await userServices.editUserByUsername(usernameParam, updatedUser);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update user' });
       return;
