@@ -65,8 +65,8 @@ async function calculateAndDispatch(): Promise<void> {
   measurementBatch = [];
 
   const spo2 = estimateSpO2(irs, reds);
-
-  if (spo2 === null || spo2 <= 85) {
+//85
+  if (spo2 === null || spo2 <= 70) {
     console.warn('⚠️ No se detecta contacto o señal inválida. Verifica el sensor.');
     return;
   }
@@ -81,9 +81,9 @@ async function calculateAndDispatch(): Promise<void> {
     } catch (err) {
       console.error('❌ Error guardando SpO₂ en Google Sheets:', err);
     }
-
+//90
     // Notifica si está bajo
-    if (latestSpO2 <= 90) {
+    if (latestSpO2 <= 98) {
       console.warn(`⚠️ SpO₂ bajo (${latestSpO2}%). Notificando al médico…`);
       try {
         
