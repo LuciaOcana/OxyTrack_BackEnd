@@ -54,17 +54,15 @@ export async function logIn(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Comprobar password
     const isPasswordValid = await comparePassword(password, loggedUser.password);
     if (!isPasswordValid) {
       res.status(401).json({ error: 'Contraseña incorrecta' });
       return;
     }
 
-    // Generar token con username
-    const token = generateToken({ username: loggedUser.username });
+    const token = generateToken({ id: loggedUser.username }, 'user'); // ✅ rol explícito
 
-    setLoginStatus(1);  //avisa que se ha iniciado sesion y que se puede empezar a medir el valor de IR y RED desde el micro
+    setLoginStatus(1);
     startMeasurementInternal(username);
 
     res.status(200).json({
@@ -78,6 +76,7 @@ export async function logIn(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+
 
 export async function verifyUserPassword(req: Request, res: Response): Promise<void> {
   try {
@@ -192,20 +191,21 @@ export async function editUser(req: Request, res: Response): Promise<void> {
 }
 export async function logOut(req: Request, res: Response): Promise<void> {
   try {
-    const token = req.headers.authorization?.split(' ')[1]; // token Bearer
+    const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       res.status(400).json({ message: 'Token no proporcionado' });
       return;
     }
 
-    invalidateToken(token); // invalida el token actual
+    invalidateToken(token, 'user'); // ✅ ahora con rol
 
-    res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
+    res.status(200).json({ message: 'Sesión de usuario cerrada correctamente' });
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 }
+
 
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   try {

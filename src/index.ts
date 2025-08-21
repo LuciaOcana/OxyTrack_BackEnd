@@ -13,6 +13,7 @@ import userDoctorRoutes from './routes/userDoctorRoutes';
 import userAdminRoutes from './routes/userAdminRoutes';
 import irRoutes from './routes/irRoutes';
 import { startBLEListener } from './bluetooth/bleListener';
+import Notification from "./models/notification";
 
 const app = express();
 
@@ -53,7 +54,7 @@ let connectedPatients: Record<string, WebSocket> = {};
 wss.on("connection", (ws, req) => {
   console.log("🔌 Nueva conexión WebSocket desde:", req.socket.remoteAddress);
 
-  ws.on("message", (msg) => {
+  ws.on("message", async (msg) => {
     try {
       const data = JSON.parse(msg.toString());
       console.log("📩 Mensaje recibido:", data);
@@ -64,6 +65,12 @@ wss.on("connection", (ws, req) => {
         if (data.role === "doctor") {
           connectedDoctors[key] = ws;
           console.log(`✅ Doctor ${key} conectado`);
+
+          // Buscar notificaciones no leídas en DB
+  const pending = await Notification.find({ doctor: key, read: false });
+  pending.forEach((n) => {
+    ws.send(JSON.stringify(n));
+  });
         } else if (data.role === "paciente") {
           connectedPatients[key] = ws;
           console.log(`✅ Paciente ${key} conectado`);

@@ -17,8 +17,6 @@ router.put("/editUserDoctor",authenticateJWT, editUserByDoctor);
 //Falta ruta para que el Doctor pueda cambiar su contraseña y no solo pueda cambiarsela el admin
 router.post("/resetPasswordDoctor", updatePasswordDoctor);
 
-// Ruta para alertar al doctor
-
 
 // Ruta log out
 router.post("/logout",logOutDoctor);

@@ -30,7 +30,7 @@ export async function loginDoctor(req: Request, res: Response): Promise<void> {
 
 
     // Genera un JWT al iniciar sesión
-    const token = generateToken({ id: loggedUser.username });
+    const token = generateToken({ id: loggedUser.username }, 'doctor');
 
     res.status(200).json({
       message: 'Inicio de sesión exitoso',
@@ -188,8 +188,7 @@ export async function logOutDoctor(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    invalidateToken(token); // invalida el token actual
-
+    invalidateToken(token, 'doctor'); // ✅ ahora con rol
     res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
   } catch (error) {
     console.error('Error al cerrar sesión:', error);

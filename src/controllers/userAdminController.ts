@@ -32,25 +32,24 @@ export async function createAdmin(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function logInAdmin(req: Request, res: Response): Promise<void> {       //No entiendo porque si pongo Promise <Response> me da error
+export async function logInAdmin(req: Request, res: Response): Promise<void> {
   try {
     const { username, password } = req.body;
     const loggedUser = await userAdminServices.findAdminByUsername(username);
-    console.log(loggedUser);
 
     if (!loggedUser) {
       res.status(404).json({ error: 'Admin no encontrado' });
       return;
     }
+
     const isMatch = await comparePassword(password, loggedUser.password);
     if (!isMatch) {
       res.status(401).json({ error: 'Contraseña incorrecta' });
       return;
     }
-    // Genera un JWT al iniciar sesión
-    const token = generateToken({ id: loggedUser.username });//, role: 'admin' });
 
-    // Si todo está bien, simplemente responde con éxito
+    const token = generateToken({ id: loggedUser.username }, 'admin');
+
     res.status(200).json({
       message: 'Inicio de sesión exitoso',
       token,
@@ -60,6 +59,7 @@ export async function logInAdmin(req: Request, res: Response): Promise<void> {  
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
+
 
 export async function registerDoctor(req: Request, res: Response): Promise<void> {
   try {
@@ -137,44 +137,41 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
   try {
     const usernameParam = req.params.username;
 
+    // Buscar el doctor original
     const doctor = await userDoctorServices.findOneDoctor({ username: usernameParam });
     if (!doctor) {
-      res.status(404).json({ error: `User with username ${usernameParam} not found` });
+      res.status(404).json({ error: `Doctor with username ${usernameParam} not found` });
       return;
     }
 
-    const {
-      username,
-      email,
-      name,
-      lastname,
-      patients,
-      password,
-    } = req.body as Partial<userDoctorInterface>;
+    // Obtener solo los campos enviados en el body
+    const updates = req.body as Partial<userDoctorInterface>;
 
-    if (username && username !== usernameParam) {
-      const usernameExists = await userDoctorServices.findOneDoctor({ username });
+    // Validar username si viene diferente
+    if (updates.username && updates.username !== usernameParam) {
+      const usernameExists = await userDoctorServices.findOneDoctor({ username: updates.username });
       if (usernameExists) {
         res.status(409).json({ error: 'Username already taken' });
         return;
       }
     }
 
+    // Construir el objeto actualizado combinando valores viejos y nuevos
     const updatedDoctor: userDoctorInterface = {
-      username: username && username.trim() !== '' ? username : doctor.username,
-      email: email && email.trim() !== '' ? email : doctor.email,
-      name: name && name.trim() !== '' ? name : doctor.name,
-      patients: [],
-      lastname: lastname && lastname.trim() !== '' ? lastname : doctor.lastname,
-
-      password: password && password.trim() !== '' ? password : doctor.password,
+      username: updates.username?.trim() || doctor.username,
+      email: updates.email?.trim() || doctor.email,
+      name: updates.name?.trim() || doctor.name,
+      lastname: updates.lastname?.trim() || doctor.lastname,
+      patients: Array.isArray(updates.patients) ? updates.patients : doctor.patients,
+      password: doctor.password, // temporal, se actualizará si viene nueva
     };
 
-    if (password && password.trim() !== '') {
-      updatedDoctor.password = await hashPassword(password);
+    // Actualizar password si se envía
+    if (updates.password && updates.password.trim() !== '') {
+      updatedDoctor.password = await hashPassword(updates.password);
     }
 
-
+    // Guardar cambios
     const updated = await userDoctorServices.editDoctorByUsername(usernameParam, updatedDoctor);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update doctor' });
@@ -184,26 +181,28 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
     res.status(200).json({ message: 'Doctor updated successfully' });
 
   } catch (error) {
-    console.error('Error in edit doctor:', error);
+    console.error('Error in editDoctorByAdmin:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
+
 export async function logOutAdmin(req: Request, res: Response): Promise<void> {
   try {
-    const token = req.headers.authorization?.split(' ')[1]; // token Bearer
+    const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       res.status(400).json({ message: 'Token no proporcionado' });
       return;
     }
 
-    invalidateToken(token); // invalida el token actual
+    invalidateToken(token, 'admin'); // ✅ ahora con rol
 
-    res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
+    res.status(200).json({ message: 'Sesión de admin cerrada correctamente' });
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 }
+
 export async function getAllUsers(req: Request, res: Response): Promise<void> {
   try {
     console.log("Get doctors");
