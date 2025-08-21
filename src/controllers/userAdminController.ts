@@ -171,12 +171,27 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
       updatedDoctor.password = await hashPassword(updates.password);
     }
 
-    // Guardar cambios
+    // Guardar cambios en el doctor
     const updated = await userDoctorServices.editDoctorByUsername(usernameParam, updatedDoctor);
     if (!updated) {
       res.status(500).json({ error: 'Failed to update doctor' });
       return;
     }
+
+    // 🔹 Actualizar los pacientes para que tengan asignado este doctor
+    for (const patientStr of (updatedDoctor.patients as string[])) {
+  const start = patientStr.lastIndexOf('(');
+  const end = patientStr.lastIndexOf(')');
+  const patientUsername = start !== -1 && end !== -1 && start < end
+    ? patientStr.slice(start + 1, end).trim()
+    : null;
+
+  if (patientUsername) {
+    await userServices.editUserByUsername(patientUsername, {
+      doctor: `${updatedDoctor.name} ${updatedDoctor.lastname} (${updatedDoctor.username})`,
+    });
+  }
+}
 
     res.status(200).json({ message: 'Doctor updated successfully' });
 
@@ -185,6 +200,7 @@ export async function editDoctorByAdmin(req: Request, res: Response): Promise<vo
     res.status(500).json({ error: 'Internal server error' });
   }
 }
+
 
 export async function logOutAdmin(req: Request, res: Response): Promise<void> {
   try {

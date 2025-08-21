@@ -104,14 +104,12 @@ wss.on("connection", (ws, req) => {
 // -----------------------------------------------------------------
 // Funciones para enviar mensajes
 
-export function sendToDoctor(username: string, payload: any) {
-  const key = username.toLowerCase().trim();
-  const doctor = connectedDoctors[key];
-  if (doctor && doctor.readyState === WebSocket.OPEN) {
-    doctor.send(JSON.stringify(payload));
-  } else {
-    console.warn(`⚠️ Doctor ${key} no conectado`);
-  }
+export function broadcastToDoctors(payload: any) {
+  Object.values(connectedDoctors).forEach((doctor) => {
+    if (doctor.readyState === WebSocket.OPEN) {
+      doctor.send(JSON.stringify(payload));
+    }
+  });
 }
 
 export function sendToPatient(username: string, payload: any) {

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendToDoctor } from "../index"; // Ajusta ruta
+import { broadcastToDoctors } from "../index"; // Ajusta ruta
 
 import { login, userDoctorInterface } from "../models/userDoctor"
 import { userDoctorServices } from "../services/userDoctorServices"
@@ -150,25 +150,38 @@ export async function updatePasswordDoctor(req: Request, res: Response): Promise
 
 export async function notifyDoctorByPatientUsername(username: string): Promise<void> {
   try {
-    // Buscar el doctor asignado al paciente
-    const doctor = await userDoctorServices.findOneDoctor({ patients: username });
+        console.log(username);
 
-    if (!doctor) {
+    // Buscar el doctor asignado al paciente
+    const user = await userServices.findOne({ username: username });
+
+    console.log(user);
+    if (!user?.doctor) {
       console.warn(`⚠️ No se encontró un doctor para el paciente ${username}`);
       return;
     }
 
+let doctorUsername: string | null = null;
+
+if (user.doctor && typeof user.doctor === 'string') {
+  const start = user.doctor.lastIndexOf('(');
+  const end = user.doctor.lastIndexOf(')');
+  if (start !== -1 && end !== -1 && start < end) {
+    doctorUsername = user.doctor.substring(start + 1, end);
+  }
+}
+console.log("NOMBRE DEL DOCTOR",doctorUsername);
     const payload = {
       type: "patientAlert",
-      target: doctor.username, // Para que el frontend sepa a quién va
+      target: doctorUsername, // Para que el frontend sepa a quién va
       patient: username,
       message: `⚠️ Alerta automática: el paciente ${username} tiene un nivel de SpO₂ bajo.`
     };
 
     // Enviar al doctor vía WebSocket
-    sendToDoctor(doctor.username, payload);
+    broadcastToDoctors(payload);
 
-    console.log(`📡 Notificación enviada a doctor ${doctor.username}`);
+    console.log(`📡 Notificación enviada a doctor ${user.username}`);
   } catch (error) {
     console.error("❌ Error en notifyDoctorByPatientUsername:", error);
   }

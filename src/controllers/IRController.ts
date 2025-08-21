@@ -86,6 +86,7 @@ async function calculateAndDispatch(): Promise<void> {
     if (latestSpO2 <= 90) {
       console.warn(`⚠️ SpO₂ bajo (${latestSpO2}%). Notificando al médico…`);
       try {
+        
         await notifyDoctorByPatientUsername(activeUsername);
       } catch (err) {
         console.error('❌ Error notificando al médico:', err);
