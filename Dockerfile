@@ -15,6 +15,8 @@ COPY . .
 
 # Compilamos TypeScript
 RUN npm run build
+#RUN node --max-old-space-size=4096 node_modules/.bin/tsc
+
 
 # Puerto que expondrá la app
 EXPOSE 3000
