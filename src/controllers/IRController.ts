@@ -6,7 +6,7 @@ import { notifyDoctorByPatientUsername } from '../controllers/userDoctorControll
 
 export const ANALYSIS_WINDOW_SIZE = 5; // nº de muestras por cálculo
 
-let measurementBatch: { ir: number; red: number }[] = [];
+export let measurementBatch: { ir: number; red: number }[] = [];
 let latestSpO2: number | null = null;
 export let activeUsername: string | null = null;
 

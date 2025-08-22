@@ -9,6 +9,8 @@ import { userInterface } from "../models/user"
 
 import { paginatorInterface } from '../utils/paginator';
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
+import { measurementBatch } from '../controllers/IRController'
+import { setLoginStatus } from '../bluetooth/bleListener';
 
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
@@ -202,6 +204,10 @@ export async function logOutDoctor(req: Request, res: Response): Promise<void> {
     }
 
     invalidateToken(token, 'doctor'); // ✅ ahora con rol
+        setLoginStatus(0);
+    
+    measurementBatch.length = 0;
+  
     res.status(200).json({ message: 'Sesión de user cerrada correctamente' });
   } catch (error) {
     console.error('Error al cerrar sesión:', error);

@@ -12,7 +12,7 @@ import userRoutes from './routes/userRoutes';
 import userDoctorRoutes from './routes/userDoctorRoutes';
 import userAdminRoutes from './routes/userAdminRoutes';
 import irRoutes from './routes/irRoutes';
-import { startBLEListener } from './bluetooth/bleListener';
+import { startWiFiListener } from './bluetooth/bleListener';
 import Notification from "./models/notification";
 
 const app = express();
@@ -35,7 +35,7 @@ app.use('/api/admin', userAdminRoutes);
 app.use('/api/oxi', irRoutes);
 
 // Iniciar BLE
-startBLEListener();
+startWiFiListener();
 
 // -----------------------------------------------------------------
 // Servidor HTTP

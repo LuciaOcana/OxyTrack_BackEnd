@@ -6,7 +6,7 @@ import { setLoginStatus } from '../bluetooth/bleListener';
 import { paginatorInterface } from '../utils/paginator';
 import { login, userInterface } from "../models/user"
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
-
+import { measurementBatch } from '../controllers/IRController'
 
 
 export async function createUser(req: Request, res: Response): Promise<void> {
@@ -198,6 +198,9 @@ export async function logOut(req: Request, res: Response): Promise<void> {
     }
 
     invalidateToken(token, 'user'); // ✅ ahora con rol
+        setLoginStatus(0);
+
+measurementBatch.length = 0;
 
     res.status(200).json({ message: 'Sesión de usuario cerrada correctamente' });
   } catch (error) {

@@ -11,6 +11,8 @@ import { userDoctorServices } from "../services/userDoctorServices"
 import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta la ruta si es diferente
 import { paginatorInterface } from '../utils/paginator';
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
+import { measurementBatch } from '../controllers/IRController'
+import { setLoginStatus } from '../bluetooth/bleListener';
 
 
 export async function createAdmin(req: Request, res: Response): Promise<void> {
@@ -211,7 +213,9 @@ export async function logOutAdmin(req: Request, res: Response): Promise<void> {
     }
 
     invalidateToken(token, 'admin'); // ✅ ahora con rol
-
+    setLoginStatus(0);
+    
+measurementBatch.length = 0;
     res.status(200).json({ message: 'Sesión de admin cerrada correctamente' });
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
