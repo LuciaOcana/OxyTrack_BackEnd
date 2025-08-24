@@ -12,7 +12,7 @@ import userRoutes from './routes/userRoutes';
 import userDoctorRoutes from './routes/userDoctorRoutes';
 import userAdminRoutes from './routes/userAdminRoutes';
 import irRoutes from './routes/irRoutes';
-import { startWiFiListener } from './bluetooth/bleListener';
+import { startWiFiListener } from './bluetooth/wifiListener';
 import Notification from "./models/notification";
 
 const app = express();

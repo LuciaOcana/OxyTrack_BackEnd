@@ -3,8 +3,8 @@ import axios from 'axios';
 import { processSample } from '../controllers/IRController';
 
 let loginStatus = 0;
-const ESP32_IP = '192.168.1.53'; // Cambia por la IP de tu ESP32
-
+//const ESP32_IP = '172.20.10.10'; // Cambia por la IP de tu ESP32
+const ESP32_IP = '192.168.1.61';
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 //---------------------------------------------------------

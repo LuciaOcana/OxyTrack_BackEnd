@@ -10,7 +10,7 @@ import { userInterface } from "../models/user"
 import { paginatorInterface } from '../utils/paginator';
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
 import { measurementBatch } from '../controllers/IRController'
-import { setLoginStatus } from '../bluetooth/bleListener';
+import { setLoginStatus } from '../bluetooth/wifiListener';
 
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
@@ -70,7 +70,7 @@ export async function getUserList(req: Request, res: Response): Promise<void> {
 export async function editUserByDoctor(req: Request, res: Response): Promise<void> {
   try {
     const usernameParam = req.params.username;
-
+console.log("USUARIO",usernameParam);
     const user = await userServices.findOne({ username: usernameParam });
     if (!user) {
       res.status(404).json({ error: `User with username ${usernameParam} not found` });
@@ -112,7 +112,23 @@ medication:
 }
 
 
+export async function getDoctor(req: Request, res: Response): Promise<void> {
+  try {
+    const { username } = req.params;
 
+    const user = await userDoctorServices.findByUsername(username);
+
+    if (!user) {
+      res.status(404).json({ message: `User with username ${username} not found` });
+      return;
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error getting user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
 export async function updatePasswordDoctor(req: Request, res: Response): Promise<void> {
   try {
         console.log("Entroooo");

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { userServices } from "../services/userServices";
 import { generateToken, comparePassword } from "../utils/auth/auth";
 import { startMeasurementInternal } from '../controllers/IRController';
-import { setLoginStatus } from '../bluetooth/bleListener';
+import { setLoginStatus } from '../bluetooth/wifiListener';
 import { paginatorInterface } from '../utils/paginator';
 import { login, userInterface } from "../models/user"
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
