@@ -4,7 +4,7 @@ import { processSample } from '../controllers/IRController';
 
 let loginStatus = 0;
 //const ESP32_IP = '172.20.10.10'; // Cambia por la IP de tu ESP32
-const ESP32_IP = '192.168.1.61';
+const ESP32_IP = '192.168.1.50';
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 //---------------------------------------------------------
@@ -71,7 +71,7 @@ export async function sendLoginStatusToESP() {
 //---------------------------------------------------------
 // Iniciar y detener el polling
 //---------------------------------------------------------
-export function startWiFiListener(pollingMs = 30000) {
+export function startWiFiListener(pollingMs = 10000) {
   console.log('📡 Iniciando listener Wi-Fi para ESP32...');
 
   // Forzar envío inicial de loginStatus

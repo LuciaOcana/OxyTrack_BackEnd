@@ -5,6 +5,9 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import http from 'http';
+import https from 'https';
+import fs from "fs";
+
 import WebSocket, { WebSocketServer } from 'ws';
 
 import connectDB from './config/db';
@@ -12,7 +15,7 @@ import userRoutes from './routes/userRoutes';
 import userDoctorRoutes from './routes/userDoctorRoutes';
 import userAdminRoutes from './routes/userAdminRoutes';
 import irRoutes from './routes/irRoutes';
-import { startWiFiListener } from './bluetooth/wifiListener';
+import { startWiFiListener } from './wifi/wifiListener';
 import Notification from "./models/notification";
 
 const app = express();
@@ -39,7 +42,15 @@ startWiFiListener();
 
 // -----------------------------------------------------------------
 // Servidor HTTP
-const server = http.createServer(app);
+//const server = http.createServer(app);
+
+// -----------------------------------------------------------------
+// Servidor HTTPS
+const options = {
+  key: fs.readFileSync("./cert/server.key"),   // tu clave privada
+  cert: fs.readFileSync("./cert/server.cert"), // tu certificado
+};
+const server = https.createServer(options, app);
 
 // -----------------------------------------------------------------
 // WebSocket Server sin path

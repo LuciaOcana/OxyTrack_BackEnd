@@ -12,7 +12,7 @@ import { comparePassword, generateToken } from '../utils/auth/auth'; // Ajusta l
 import { paginatorInterface } from '../utils/paginator';
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
 import { measurementBatch } from '../controllers/IRController'
-import { setLoginStatus } from '../bluetooth/wifiListener';
+import { setLoginStatus } from '../wifi/wifiListener';
 
 
 export async function createAdmin(req: Request, res: Response): Promise<void> {

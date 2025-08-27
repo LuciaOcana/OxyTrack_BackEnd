@@ -10,7 +10,7 @@ import { userInterface } from "../models/user"
 import { paginatorInterface } from '../utils/paginator';
 import { invalidateToken, hashPassword } from '../utils/auth/auth';
 import { measurementBatch } from '../controllers/IRController'
-import { setLoginStatus } from '../bluetooth/wifiListener';
+import { setLoginStatus } from '../wifi/wifiListener';
 
 
 export async function loginDoctor(req: Request, res: Response): Promise<void> {
