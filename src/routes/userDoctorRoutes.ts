@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/doctorLogin", loginDoctor);
 
 // Ruta para obtener todos los usuarios
-router.get("/getUsers/:page/:limit",authenticateJWT, getUserList); //TokenValidation, AdminValidation, getUsers);
+router.get("/getUsers/:username/:page/:limit",authenticateJWT, getUserList); //TokenValidation, AdminValidation, getUsers);
 
 //Ruta de editUser
 router.put("/editUserDoctor/:username",authenticateJWT, editUserByDoctor);

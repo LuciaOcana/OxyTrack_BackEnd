@@ -4,7 +4,7 @@ import { processSample } from '../controllers/IRController';
 
 let loginStatus = 0;
 //const ESP32_IP = '172.20.10.10'; // Cambia por la IP de tu ESP32
-const ESP32_IP = '192.168.1.50';
+const ESP32_IP = '192.168.1.57';
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 //---------------------------------------------------------

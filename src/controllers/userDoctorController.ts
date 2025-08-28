@@ -48,21 +48,27 @@ export async function loginDoctor(req: Request, res: Response): Promise<void> {
 export async function getUserList(req: Request, res: Response): Promise<void> {
   try {
     console.log("Get users");
+        const doctorName = req.params.username;  // 👈 viene de la URL
+    console.log (doctorName);
     const page = Number(req.params.page);
     const limit = Number(req.params.limit);
     const paginator = { page, limit } as paginatorInterface
     console.log(paginator);
-    const users = await userDoctorServices.getAllUsers(paginator.page, paginator.limit);
+const users = await userDoctorServices.getUsersByDoctor(
+      doctorName,
+      paginator.page,
+      paginator.limit
+    );   
     if (!users) {
       console.error("Users is undefined or null");
       res.json([]);
+      return;
     }
-    console.log("users", users);
+
     res.json({ users });
   } catch (error) {
-
-    console.error(error); //log de errores quitar
-    res.status(500).json({ error: 'Failes to get users' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to get users' });
   }
 }
 
